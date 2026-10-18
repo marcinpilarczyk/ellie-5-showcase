@@ -285,6 +285,7 @@ For complete operational procedures, backup restoration, and service monitoring,
 
 ## Technical Documentation & References
 
+* **[How Ellie Works: A Plain-English Guide](docs/HOW_ELLIE_WORKS.md)**: A comprehensive non-technical walkthrough of Ellie's role, daily workflows, safety mechanisms, and capabilities.
 * **[Public Architecture & Governance Specification](docs/INVENTORY_PUBLIC.md)**: Exhaustive breakdown of system topology, model routing parameters, and tool catalogs.
 * **[Ellie Design Doctrine](docs/ELLIE_DESIGN.md)**: Engineering manifesto, failure mode analysis from earlier generations, and the philosophical principles behind host governance.
 * **[Operational Runbook](RUNBOOK.md)**: Day-to-day administration, network architecture, and diagnostic troubleshooting.
