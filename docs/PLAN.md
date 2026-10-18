@@ -269,6 +269,6 @@ Settled 2026-10-15:
 - The `chromium` snap is removed (`sudo snap remove chromium`; nothing ran or referenced it). Snap kept a snapshot of its data (`snap saved`, set 1). Its content snaps (gnome-46-2404, mesa-2404, kf6-core24, gtk-common-themes, cups) are still installed; they can go if nothing else uses them.
 - Older legacy workspaces are archived (read-only, reversible).
 - Builds and tests run cleanly via `npm run build` and `npm test`.
-- v5 is on GitHub: `owner/ellie-v5`, branch main. The CI workflow (.github/workflows/ci.yml: Node 22 and 24, build, test) runs on every push. Deploys go with `bash deploy/push.sh`.
+- v5 is on GitHub: `marcinpilarczyk/ellie-5-showcase`, branch main. The CI workflow (.github/workflows/ci.yml: Node 22 and 24, build, test) runs on every push. Deploys go with `bash deploy/push.sh`.
 
 

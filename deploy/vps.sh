@@ -11,7 +11,7 @@
 # Never touched: ~/backups, Proton Bridge, Tailscale, anything not named ellie*.
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/owner/ellie-v5.git}"
+REPO_URL="${REPO_URL:-https://github.com/marcinpilarczyk/ellie-5-showcase.git}"
 APP_DIR="$HOME/ellie"
 DATA_DIR="$HOME/.local/share/ellie"
 BACKUP_DIR="$HOME/backups/v2-preservation"

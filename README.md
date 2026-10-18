@@ -225,8 +225,8 @@ ellie-v5/
 
 ### 1. Installation
 ```bash
-git clone https://github.com/owner/ellie-v5.git
-cd ellie-v5
+git clone https://github.com/marcinpilarczyk/ellie-5-showcase.git
+cd ellie-5-showcase
 npm ci
 ```
 
