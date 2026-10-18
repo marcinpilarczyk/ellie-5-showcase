@@ -8,19 +8,19 @@
 ## 0. Executive preface: context note for AI employee platforms
 
 ### Background and motivation
-This architecture specification documents Ellie v5, a private, single-tenant, Slack-first AI Chief of Staff. The system was designed and built following production experience with commercial AI coworker platforms, specifically Viktor.com (where the author is an active participant in the Viktor Implementation Specialist program).
+This architecture specification documents Ellie v5, a private, single-tenant, Slack-first AI Chief of Staff. The system was designed and built following production experience with commercial AI coworker platforms (specifically Viktor.com).
 
-Viktor is great and excels for mid-size and enterprise companies, where pooled team budgets absorb usage-based consumption naturally. That is why it is an ideal platform to pitch and implement for corporate clients. Viktor pioneered several interaction patterns that heavily inspired Ellie:
+Commercial AI coworker platforms excel for mid-size and enterprise companies, where pooled team budgets absorb usage-based consumption naturally. Such platforms pioneered several interaction patterns that heavily inspired Ellie:
 1. The coworker experience: interacting inside Slack channels and threads with a natural conversational voice, responsiveness, and solid context retention instead of acting like a temporary chatbot.
 2. Silence as a valid output: recognizing that in scheduled monitoring, saying nothing when nothing changed is the hallmark of an executive assistant.
 3. Interactive spaces: publishing persistent, visual HTML micro-applications and dashboards instead of dumping walls of formatted text into chat.
 
-### The freelancer dilemma and real-world friction
+### The solo operator dilemma and real-world friction
 For a freelancer or solo operator, usage-based credit tiers become an obstacle to running an always-on, 24/7 personal chief of staff:
 * Background vigilance anxiety: running continuous background watchers (inbox monitoring, calendar overlap checks, folder sweeps, open loop tracking) constantly drains monthly credit allotments. Having to throttle or pause 10 out of 11 routines just to save credits defeats the core value of an autonomous coworker.
 * Polling versus thinking: in multi-tenant managed setups, over 90% of credits end up consumed by idle polling loops and conversational ping-pongs, not deep reasoning.
 
-Viktor's workflow was too good to drop, but running it continuously as an independent operator required a setup anchored in direct-API pricing and deterministic host-code execution:
+While the coworker workflow is compelling, running it continuously as an independent operator required a setup anchored in direct-API pricing and deterministic host-code execution:
 
 1. Cheap triggers, expensive thinking:
    Trigger detection runs in lightweight host code (inspecting IMAP UID sequences, Gmail historyId checkpoints, Google Drive modification timestamps, or receiving webhooks) at zero marginal cost. Gemini models run only when an actual state change needs intelligence, reducing background costs to near zero while keeping sub-minute responsiveness.
