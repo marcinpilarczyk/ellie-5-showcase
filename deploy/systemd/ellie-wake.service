@@ -1,0 +1,10 @@
+[Unit]
+Description=Ellie wake cycle (sentinels, reminders, one due routine)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/ellie
+EnvironmentFile=%h/ellie/.env
+ExecStart=@NODE@ %h/ellie/dist/wake.js
+TimeoutStartSec=15min

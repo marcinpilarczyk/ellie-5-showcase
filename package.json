@@ -1,0 +1,43 @@
+{
+  "name": "ellie",
+  "version": "5.0.0",
+  "private": true,
+  "description": "Ellie v5 - Slack-first AI chief of staff",
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "wake": "node dist/wake.js",
+    "doctor": "node dist/scripts/doctor.js",
+    "google-token:export": "node dist/scripts/google-token.js export",
+    "google-token:import": "node dist/scripts/google-token.js import",
+    "dev": "tsx watch src/index.ts",
+    "test": "node --env-file=.env.test --test dist/test/*.test.js",
+    "test:ts": "node --env-file=.env.test --import tsx --test src/test/*.test.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.27.0",
+    "docx": "9.7.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "imapflow": "^1.0.171",
+    "jszip": "3.10.1",
+    "mailparser": "^3.7.2",
+    "nodemailer": "^6.10.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/mailparser": "^3.9.0",
+    "@types/node": "^22.13.10",
+    "@types/nodemailer": "^8.0.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

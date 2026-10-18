@@ -1,0 +1,46 @@
+package com.ellie.app.ui.theme
+
+import android.app.Activity
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+
+private val DarkColorScheme = darkColorScheme(
+    primary = AccentSky,
+    onPrimary = DarkBg,
+    primaryContainer = AccentSkyDim,
+    onPrimaryContainer = TextPrimary,
+    background = DarkBg,
+    onBackground = TextPrimary,
+    surface = DarkSurface,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkPanel,
+    onSurfaceVariant = TextSecondary,
+    outline = DarkPanelBorder,
+    error = StatusBad,
+    onError = DarkBg
+)
+
+@Composable
+fun EllieTheme(content: @Composable () -> Unit) {
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val activity = view.context as? Activity
+            val window = activity?.window ?: return@SideEffect
+            window.statusBarColor = DarkBg.toArgb()
+            window.navigationBarColor = DarkSurface.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
+        }
+    }
+
+    MaterialTheme(
+        colorScheme = DarkColorScheme,
+        content = content
+    )
+}

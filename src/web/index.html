@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ellie · Chief of Staff</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Ctext x='16' y='23' font-family='system-ui,sans-serif' font-size='19' font-weight='800' text-anchor='middle' fill='%230f172a'%3EE%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #090d16;
+    --sidebar: #0f172a;
+    --panel: #172033;
+    --panel-hover: #1e293b;
+    --line: #293548;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --dim: #64748b;
+    --accent: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.15);
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; height: 100vh; overflow: hidden; }
+  
+  /* Sidebar */
+  aside {
+    width: 250px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .brand {
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #090d16;
+    font-size: 16px;
+  }
+  .brand-text h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  .brand-text .status-dot { font-size: 11px; color: var(--ok); display: flex; align-items: center; gap: 5px; }
+  .brand-text .status-dot::before { content: ""; width: 6px; height: 6px; background: var(--ok); border-radius: 50%; box-shadow: 0 0 6px var(--ok); }
+  
+  nav { padding: 12px 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .nav-group-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--dim); padding: 10px 10px 4px; font-weight: 600; }
+  nav button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13.5px;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+  }
+  nav button:hover { background: var(--panel); color: var(--text); }
+  nav button.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
+  nav button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; flex-shrink: 0; }
+  .nav-badge { margin-left: auto; background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
+  
+  .sidebar-footer { padding: 12px; border-top: 1px solid var(--line); }
+  .sidebar-footer button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+  }
+  .sidebar-footer button:hover { background: var(--panel); color: var(--text); }
+  
+  /* Main Content Area */
+  .layout-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+  header {
+    height: 52px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--sidebar);
+    flex-shrink: 0;
+  }
+  .header-title { font-size: 16px; font-weight: 600; }
+  #msg { color: var(--accent); font-size: 13px; }
+  
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  
+  /* Common UI Elements */
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+  .card:hover { border-color: #3b4961; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .muted { color: var(--muted); }
+  .dim { color: var(--dim); }
+  .grow { flex: 1; min-width: 0; }
+  pre { white-space: pre-wrap; word-break: break-word; margin: 8px 0 0; color: var(--text); font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b111e; padding: 10px; border-radius: 6px; }
+  
+  button.act { border: 1px solid var(--line); background: #0b1220; color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  button.act:hover { background: #17243c; border-color: var(--muted); }
+  button.primary { background: #2563eb; border-color: #3b82f6; color: #fff; }
+  button.primary:hover { background: #1d4ed8; }
+  button.ok { border-color: var(--ok); color: var(--ok); }
+  button.ok:hover { background: rgba(52, 211, 153, 0.1); }
+  button.bad { border-color: var(--bad); color: var(--bad); }
+  button.bad:hover { background: rgba(248, 113, 113, 0.1); }
+  
+  .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); text-transform: uppercase; letter-spacing: 0.4px; }
+  .b-ok { color: var(--ok); border-color: rgba(52, 211, 153, 0.3); background: rgba(52, 211, 153, 0.08); }
+  .b-bad { color: var(--bad); border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.08); }
+  .b-warn { color: var(--warn); border-color: rgba(251, 191, 36, 0.3); background: rgba(251, 191, 36, 0.08); }
+  .b-accent { color: var(--accent); border-color: rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.08); }
+  
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .scroll { overflow-x: auto; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .big { font-size: 24px; font-weight: 700; margin: 4px 0; color: #fff; }
+  
+  /* Spaces Gallery Styles (Inspired by Viktor) */
+  .spaces-header { margin-bottom: 20px; }
+  .spaces-header h2 { font-size: 20px; font-weight: 700; margin: 0 0 6px 0; }
+  .spaces-header p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .spaces-controls { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .search-input {
+    background: var(--sidebar);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    width: 260px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .filter-pills { display: flex; gap: 6px; }
+  .pill {
+    background: var(--sidebar);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .pill.active { background: var(--panel-hover); color: var(--text); border-color: var(--muted); }
+  
+  .spaces-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .space-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .space-card:hover { transform: translateY(-2px); border-color: #475569; }
+  .space-thumbnail {
+    height: 120px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 12px;
+    position: relative;
+    padding: 12px;
+  }
+  .space-thumbnail .mini-preview {
+    width: 100%;
+    height: 100%;
+    background: #090d16;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+  }
+  .space-thumbnail .mini-line { height: 6px; background: #334155; border-radius: 3px; width: 60%; }
+  .space-thumbnail .mini-line.wide { width: 90%; }
+  .space-thumbnail .mini-line.accent { background: var(--accent); width: 40%; }
+  
+  .space-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+  .space-title { font-size: 15px; font-weight: 600; margin: 0 0 6px 0; }
+  .space-desc { font-size: 12.5px; color: var(--muted); margin: 0 0 12px 0; line-height: 1.4; flex: 1; }
+  .space-meta { font-size: 11.5px; color: var(--dim); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: auto; }
+  .space-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .space-actions a {
+    flex: 1;
+    text-align: center;
+    background: #1e293b;
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .space-actions a:hover { background: #2d3c54; border-color: var(--accent); color: #fff; }
+  
+  /* Settings View */
+  .settings-section { margin-bottom: 24px; }
+  .settings-section h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--dim); margin-bottom: 12px; }
+  .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; }
+  .setting-info strong { display: block; font-size: 13.5px; margin-bottom: 2px; }
+  .setting-info span { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="brand">
+    <div class="avatar">E</div>
+    <div class="brand-text">
+      <h1>Ellie</h1>
+      <div class="status-dot">Tailscale Protected</div>
+    </div>
+  </div>
+  
+  <nav>
+    <div class="nav-group-title">Operations</div>
+    <button data-tab="queue" class="active">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Approvals
+      <span id="queue-badge" class="nav-badge" style="display:none">0</span>
+    </button>
+    <button data-tab="spaces">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      Spaces
+    </button>
+    <button data-tab="routines">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Routines
+    </button>
+    <button data-tab="runs">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Runs & Traces
+    </button>
+    <button data-tab="costs">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+      Usage & Costs
+    </button>
+    
+    <div class="nav-group-title">Knowledge</div>
+    <button data-tab="docs">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Project Docs
+    </button>
+  </nav>
+  
+  <div class="sidebar-footer">
+    <button data-tab="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </button>
+  </div>
+</aside>
+
+<div class="layout-main">
+  <header>
+    <div id="section-title" class="header-title">Approvals</div>
+    <span id="msg"></span>
+  </header>
+  <main id="view"></main>
+</div>
+
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const view = document.getElementById('view');
+const msg = t => { document.getElementById('msg').textContent = t || ''; };
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opts });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+const statusBadge = s => {
+  const cls = ['DELIVERED', 'SILENT', 'COMPLETED', 'VERIFIED', 'active'].includes(s) ? 'b-ok'
+    : ['FAILED', 'NOT_DELIVERED', 'TIMEOUT', 'archived'].includes(s) ? 'b-bad' : 'b-warn';
+  return `<span class="badge ${cls}">${esc(s || '—')}</span>`;
+};
+
+const categoryBadge = c => {
+  return `<span class="badge b-accent">${esc(c || 'report')}</span>`;
+};
+
+// Check queue length for badge
+async function updateQueueBadge() {
+  try {
+    const { items } = await api('/api/queue');
+    const badge = document.getElementById('queue-badge');
+    if (items && items.length > 0) {
+      badge.textContent = items.length;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch {}
+}
+
+const tabs = {
+  async queue() {
+    const { items } = await api('/api/queue');
+    if (!items.length) return '<div class="card"><p class="muted" style="margin:0">Nothing waiting for approval. Ellie is in quiet monitoring mode.</p></div>';
+    return items.map(a => `
+      <div class="card">
+        <div class="row">
+          <strong class="grow" style="font-size:15px">${esc(a.actionType)}${a.payload.to ? ' → ' + esc(a.payload.to) : ''}</strong>
+          <span class="muted" style="font-size:12px">expires ${esc(new Date(a.expiresAt).toLocaleString())}</span>
+          <button class="act ok" data-approve="${esc(a.id)}">Approve & Execute</button>
+          <button class="act bad" data-drop="${esc(a.id)}">Drop</button>
+        </div>
+        ${a.payload.subject ? `<div style="margin-top:6px"><span class="muted">Subject:</span> <strong>${esc(a.payload.subject)}</strong></div>` : ''}
+        <pre>${esc(a.payload.body || a.payload.text || JSON.stringify(a.payload, null, 2))}</pre>
+      </div>`).join('');
+  },
+
+  async spaces() {
+    const { spaces } = await api('/api/spaces');
+    let html = `
+      <div class="spaces-header">
+        <h2>Spaces</h2>
+        <p>Interactive web applications, visual radars, and analytical reports generated by Ellie on your VPS.</p>
+      </div>
+      <div class="spaces-controls">
+        <input type="text" id="space-search" class="search-input" placeholder="Search spaces by title or slug…">
+        <div class="filter-pills">
+          <span class="pill active" data-cat="all">All</span>
+          <span class="pill" data-cat="report">Reports</span>
+          <span class="pill" data-cat="radar">Radars</span>
+          <span class="pill" data-cat="dashboard">Dashboards</span>
+          <span class="pill" data-cat="tracker">Trackers</span>
+        </div>
+      </div>
+    `;
+
+    if (!spaces.length) {
+      html += `
+        <div class="card" style="text-align:center; padding:40px 20px;">
+          <p class="muted" style="font-size:15px; margin-bottom:8px">No Spaces published yet.</p>
+          <p class="dim" style="font-size:13px; max-width:440px; margin:0 auto 16px;">
+            Ask Ellie in Slack to generate a report, or during a scheduled routine Ellie will automatically publish interactive radars here.
+          </p>
+        </div>
+      `;
+      return html;
+    }
+
+    html += '<div class="spaces-grid">';
+    for (const s of spaces) {
+      html += `
+        <div class="space-card" data-category="${esc(s.category)}" data-search="${esc((s.title + ' ' + s.slug + ' ' + (s.description || '')).toLowerCase())}">
+          <div class="space-thumbnail">
+            <div class="mini-preview">
+              <div class="mini-line accent"></div>
+              <div class="mini-line wide"></div>
+              <div class="mini-line"></div>
+            </div>
+          </div>
+          <div class="space-body">
+            <div class="row" style="margin-bottom:6px">
+              <h3 class="space-title grow">${esc(s.title)}</h3>
+              ${categoryBadge(s.category)}
+            </div>
+            <p class="space-desc">${esc(s.description || 'Interactive page hosted by Ellie on VPS.')}</p>
+            <div class="space-meta">
+              <span>Updated ${esc(new Date(s.updated_at).toLocaleDateString())}</span>
+              <span>by ${esc(s.created_by || 'ellie')}</span>
+            </div>
+            <div class="space-actions">
+              <a href="/spaces/${esc(s.slug)}" target="_blank">Open Space ↗</a>
+              <button class="act bad" style="padding:4px 8px;font-size:11px" data-archive-space="${esc(s.slug)}">Archive</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    html += '</div>';
+    return html;
+  },
+
+  async routines() {
+    const { routines } = await api('/api/ops/routines');
+    if (!routines.length) return '<div class="card"><p class="muted">No routines yet. Ask Ellie in Slack to create one.</p></div>';
+    return `<div class="card scroll"><table>
+      <tr><th>Routine</th><th>Schedule</th><th>Last run</th><th>Actions</th></tr>
+      ${routines.map(r => `<tr>
+        <td><strong>${esc(r.title)}</strong><div class="muted">${esc(r.id)}${r.primary_model ? ' · ' + esc(r.primary_model) : ''}</div></td>
+        <td>${esc(r.cadence_description)}<div class="muted">${esc(r.timezone)}</div></td>
+        <td>${r.running_since ? `<span class="badge b-warn">Running since ${esc(new Date(r.running_since).toLocaleTimeString())}</span><br>` : ''}${r.last_run_at ? esc(new Date(r.last_run_at).toLocaleString()) + ' ' + statusBadge(r.last_run_status) : '<span class="muted">never</span>'}
+          ${r.last_run_note ? `<div style="color:var(--warn); font-size:12px">${esc(r.last_run_note)}</div>` : ''}</td>
+        <td class="row">
+          <button class="act" data-toggle="${esc(r.id)}">${r.is_active ? 'Disable' : 'Enable'}</button>
+          <button class="act ok" data-run="${esc(r.id)}"${r.running_since ? ' disabled' : ''}>${r.running_since ? 'Running…' : 'Run now'}</button>
+        </td></tr>`).join('')}
+    </table></div>`;
+  },
+
+  async runs() {
+    const { traces } = await api('/api/ops/traces?limit=50');
+    if (!traces.length) return '<div class="card"><p class="muted">No runs recorded yet.</p></div>';
+    return traces.map(t => `
+      <details class="card">
+        <summary class="row" style="cursor:pointer">
+          ${statusBadge(t.status)}
+          <span class="grow" style="font-weight:500">${esc(t.trigger)} · ${esc((t.instruction || '').slice(0, 110))}</span>
+          <span class="muted" style="font-size:12px">${esc(new Date(t.created_at + 'Z').toLocaleString())} · ${Math.round((t.duration_ms || 0) / 1000)}s (model ${Math.round((t.model_ms || 0) / 1000)}s) · ${esc(t.total_tokens)} tok (${esc(t.cached_tokens)} cached)</span>
+        </summary>
+        ${t.error ? `<pre style="color:var(--bad)">${esc(t.error)}</pre>` : ''}
+        ${t.delivered_text ? `<div class="muted" style="margin-top:10px; font-weight:600">Delivered to Slack:</div><pre>${esc(t.delivered_text)}</pre>` : ''}
+        <div class="muted" style="margin-top:10px; font-weight:600">Tools Called:</div>
+        <pre>${esc((t.toolsCalled || []).map((c, i) => `${i + 1}. ${c.tool} (${c.durationMs ?? '?'} ms)${c.handle ? ' → ' + c.handle : ''}`).join('\n') || 'No tools called.')}</pre>
+      </details>`).join('');
+  },
+
+  async costs() {
+    const { breakdown: b, summary: s } = await api('/api/ops/costs');
+    const tile = (label, m) => `<div class="card"><div class="muted">${label}</div>
+      <div class="big">$${(m.estimatedCostUsd || 0).toFixed(4)}</div>
+      <div class="muted" style="font-size:12px">${m.callsCount} calls · ${m.promptTokens.toLocaleString()} prompt (${m.cachedTokens.toLocaleString()} cached) · ${m.thinkingTokens.toLocaleString()} thinking · ${m.completionTokens.toLocaleString()} output</div></div>`;
+    return `<div class="card" style="margin-bottom:16px"><p class="muted" style="margin:0">Last 7 days · total spend <strong style="color:var(--text);font-size:16px">$${(b.totalCostUsd || 0).toFixed(4)}</strong> · ${s.callsCount} calls total. Telemetry recorded in <code>api_usage</code> repository.</p></div>
+      <div class="tiles">${tile('Gemini Flash (Default Tier)', b.flash)}${tile('Reasoning Model (Deep Analysis)', b.reasoning)}</div>`;
+  },
+
+  async docs() {
+    return `
+      <div class="card">
+        <h3 style="margin-top:0">Canonical Project State</h3>
+        <p class="muted">Managed under <code>/EllieOS/Projects/&lt;Project&gt;/PROJECT_STATE</code> across 8 canonical sections.</p>
+        <p class="dim" style="font-size:12.5px">Objective · Current Status · Active Workstreams · Open Loops · Key Decisions · Risks & Blockers · Next Actions · Linked Artifacts</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Owner Source Verification</h3>
+        <p class="muted">Claims Bank and identity details are strictly verified against <code>OWNER_PROFILE</code> and registered Drive docs before drafting.</p>
+      </div>
+    `;
+  },
+
+  async settings() {
+    return `
+      <div class="settings-section">
+        <h3>Workspace & Model Router</h3>
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Default Fast Tier</strong>
+            <span>Gemini Flash (high efficiency, implicit caching enabled)</span>
+          </div>
+          <span class="badge b-ok">Active</span>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Reasoning Tier</strong>
+            <span>Gemini Reasoning model (routed on explicit complex analysis & evaluation)</span>
+          </div>
+          <span class="badge b-ok">Active</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Integrations & Sentinels</h3>
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Google Workspace</strong>
+            <span>Gmail, Google Drive, Google Docs, Google Calendar</span>
+          </div>
+          <a href="/api/integrations/google/connect" class="act" style="text-decoration:none">Connect / Reauth</a>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Slack Bot & Webhooks</strong>
+            <span>Verified with HMAC signature verification</span>
+          </div>
+          <span class="badge b-ok">Active</span>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Proton Mail Bridge</strong>
+            <span>Localhost IMAP/SMTP listener on VPS</span>
+          </div>
+          <span class="badge b-ok">Configured</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Safety & Governance</h3>
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Action Ledger (P5)</strong>
+            <span>Every consequential outward send must be explicitly approved</span>
+          </div>
+          <span class="badge b-ok">Enforced</span>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Claims Bank & Identity Guard (P8)</strong>
+            <span>Outward drafts checked against owner profile facts</span>
+          </div>
+          <span class="badge b-ok">Enforced</span>
+        </div>
+      </div>
+    `;
+  }
+};
+
+const titles = {
+  queue: 'Approvals & Action Ledger',
+  spaces: 'Spaces & Dashboards',
+  routines: 'Scheduled Routines & Sentinels',
+  runs: 'Runs & Execution Observability',
+  costs: 'Usage & Token Spending',
+  docs: 'Project Docs & State',
+  settings: 'Workspace Settings'
+};
+
+async function show(tab, keepMsg = false) {
+  if (!tabs[tab]) tab = 'queue';
+  document.querySelectorAll('nav button, .sidebar-footer button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('section-title').textContent = titles[tab] || 'Ellie';
+  history.replaceState(null, '', '/' + (tab === 'queue' ? '' : tab));
+  view.innerHTML = '<div class="card"><p class="muted">Loading…</p></div>';
+  try {
+    view.innerHTML = await tabs[tab]();
+    if (!keepMsg) msg('');
+    if (tab === 'spaces') setupSpacesListeners();
+  } catch (e) {
+    view.innerHTML = `<div class="card"><p style="color:var(--bad)">${esc(e.message)}</p></div>`;
+  }
+  view.dataset.tab = tab;
+  updateQueueBadge();
+}
+
+function setupSpacesListeners() {
+  const searchInput = document.getElementById('space-search');
+  const pills = document.querySelectorAll('.filter-pills .pill');
+  let activeCat = 'all';
+
+  function filterCards() {
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    document.querySelectorAll('.space-card').forEach(card => {
+      const cat = card.dataset.category;
+      const searchData = card.dataset.search || '';
+      const matchesCat = activeCat === 'all' || cat === activeCat;
+      const matchesSearch = !q || searchData.includes(q);
+      card.style.display = matchesCat && matchesSearch ? 'flex' : 'none';
+    });
+  }
+
+  if (searchInput) searchInput.addEventListener('input', filterCards);
+  pills.forEach(p => {
+    p.addEventListener('click', () => {
+      pills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      activeCat = p.dataset.cat;
+      filterCards();
+    });
+  });
+}
+
+document.querySelector('aside').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-tab]');
+  if (btn) show(btn.dataset.tab);
+});
+
+view.addEventListener('click', async e => {
+  const d = e.target.dataset;
+  try {
+    if (d.approve) {
+      msg('Executing…');
+      const r = await api(`/api/queue/${d.approve}/approve`, { method: 'POST' });
+      msg(r.message || r.status || 'Executed.');
+    } else if (d.drop) {
+      await api(`/api/queue/${d.drop}/drop`, { method: 'POST' });
+      msg('Dropped from queue.');
+    } else if (d.toggle) {
+      await api(`/api/ops/routines/${d.toggle}/toggle`, { method: 'POST' });
+    } else if (d.run) {
+      e.target.disabled = true;
+      e.target.textContent = 'Starting…';
+      const r = await api(`/api/ops/routines/${d.run}/run`, { method: 'POST' });
+      msg(r.message);
+    } else if (d.archiveSpace) {
+      await api(`/api/spaces/${d.archiveSpace}/archive`, { method: 'POST' });
+      msg('Space archived.');
+    } else {
+      return;
+    }
+    show(view.dataset.tab, true);
+  } catch (err) {
+    msg(err.message);
+    if (d.run) show(view.dataset.tab, true);
+  }
+});
+
+const initial = location.pathname.replace(/^\//, '') || 'queue';
+show(initial);
+updateQueueBadge();
+setInterval(updateQueueBadge, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+[Unit]
+Description=Ellie (Slack, approvals, control page)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/ellie
+EnvironmentFile=%h/ellie/.env
+ExecStart=@NODE@ %h/ellie/dist/index.js
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

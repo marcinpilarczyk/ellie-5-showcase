@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+!.env.test
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.log
+.test-data/
+private/
+.DS_Store
+Thumbs.db
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.apk
+*.gdoc
