@@ -473,28 +473,31 @@ const tabs = {
       </div>
       <div class="card">
         <h3 style="margin-top:0">Owner Source Verification</h3>
-        <p class="muted">Claims Bank and identity details are strictly verified against <code>OWNER_PROFILE</code> and registered Drive docs before drafting.</p>
+        <p class="muted">Supported outbound text is checked against configured owner sources. Coverage is best-effort and is listed in the architecture documentation.</p>
       </div>
     `;
   },
 
   async settings() {
+    const ops = await api('/api/ops/status');
+    const configured = (ok, yes = 'Configured', no = 'Not configured') =>
+      `<span class="badge ${ok ? 'b-ok' : 'b-bad'}">${ok ? yes : no}</span>`;
     return `
       <div class="settings-section">
         <h3>Workspace & Model Router</h3>
         <div class="setting-row">
           <div class="setting-info">
             <strong>Default Fast Tier</strong>
-            <span>Gemini Flash (high efficiency, implicit caching enabled)</span>
+            <span>${esc(ops.flashModel || 'Not configured')}</span>
           </div>
-          <span class="badge b-ok">Active</span>
+          ${configured(Boolean(ops.flashModel), 'Configured')}
         </div>
         <div class="setting-row">
           <div class="setting-info">
             <strong>Reasoning Tier</strong>
-            <span>Gemini Reasoning model (routed on explicit complex analysis & evaluation)</span>
+            <span>${esc(ops.reasoningModel || 'Not configured')}</span>
           </div>
-          <span class="badge b-ok">Active</span>
+          ${configured(Boolean(ops.reasoningModel), 'Configured')}
         </div>
       </div>
 
@@ -505,21 +508,21 @@ const tabs = {
             <strong>Google Workspace</strong>
             <span>Gmail, Google Drive, Google Docs, Google Calendar</span>
           </div>
-          <a href="/api/integrations/google/connect" class="act" style="text-decoration:none">Connect / Reauth</a>
+          <span>${configured(Boolean(ops.googleConnected), 'Connected', 'Not connected')} <a href="/api/integrations/google/connect">Connect / Reauth</a></span>
         </div>
         <div class="setting-row">
           <div class="setting-info">
             <strong>Slack Bot & Webhooks</strong>
             <span>Verified with HMAC signature verification</span>
           </div>
-          <span class="badge b-ok">Active</span>
+          ${configured(Boolean(ops.slackConfigured))}
         </div>
         <div class="setting-row">
           <div class="setting-info">
             <strong>Proton Mail Bridge</strong>
             <span>Localhost IMAP/SMTP listener on VPS</span>
           </div>
-          <span class="badge b-ok">Configured</span>
+          ${configured(Boolean(ops.protonConfigured))}
         </div>
       </div>
 
@@ -530,14 +533,14 @@ const tabs = {
             <strong>Action Ledger (P5)</strong>
             <span>Every consequential outward send must be explicitly approved</span>
           </div>
-          <span class="badge b-ok">Enforced</span>
+          ${configured(true, 'Enabled')}
         </div>
         <div class="setting-row">
           <div class="setting-info">
             <strong>Claims Bank & Identity Guard (P8)</strong>
-            <span>Outward drafts checked against owner profile facts</span>
+            <span>Outbound text checked against configured owner sources where the tool supports it</span>
           </div>
-          <span class="badge b-ok">Enforced</span>
+          ${configured(Boolean(ops.claimsBankConfigured), 'Configured', 'Not configured')}
         </div>
       </div>
     `;

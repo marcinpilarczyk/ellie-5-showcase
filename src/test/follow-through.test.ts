@@ -208,7 +208,7 @@ describe('Interactive runs end only through finish', () => {
 
   it('keeps working after tool calls and ends with the finish message', async () => {
     const model = scriptedModel([
-      [{ name: 'web_search', args: { query: 'Ocean Technologies Group' } }],
+      [{ name: 'web_search', args: { query: 'Example Technologies Group' } }],
       [{ name: 'docs_create', args: { title: 'Resume', content: '...' } }],
       [{ name: 'finish', args: { status: 'DONE', message: 'Tailored resume is ready.', artifactLink: DOC_URL } }]
     ]);

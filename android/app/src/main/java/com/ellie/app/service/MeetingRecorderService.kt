@@ -314,6 +314,7 @@ class MeetingRecorderService : Service() {
             } catch (e: Exception) {
                 _recordingState.value = MeetingRecordState.Error("Failed processing recording: ${e.message}")
             } finally {
+                recordedFile.delete()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }

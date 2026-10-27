@@ -61,7 +61,7 @@ const RAW_EVENT = {
   htmlLink: 'https://www.google.com/calendar/event?eid=abc',
   summary: 'Bolt - Recruiter Interview',
   description: '<p>Hi <span>Alex</span>,<br />See <a href="https://bolt.eu/job">Job Posting</a></p>',
-  organizer: { email: 'mariana@bolt.eu' },
+  organizer: { email: 'organizer@example.test' },
   start: { dateTime: '2026-10-15T14:00:00+02:00', timeZone: 'Europe/Tallinn' },
   end: { dateTime: '2026-10-15T14:30:00+02:00', timeZone: 'Europe/Tallinn' },
   attendees: [{ email: 'me@x.com', self: true, responseStatus: 'accepted' }],
@@ -78,7 +78,7 @@ describe('Compact Google results', () => {
       start: '2026-10-15T14:00:00+02:00',
       end: '2026-10-15T14:30:00+02:00',
       meetLink: 'https://meet.google.com/xbg',
-      organizer: 'mariana@bolt.eu',
+      organizer: 'organizer@example.test',
       myResponse: 'accepted',
       description: 'Hi Alex,\nSee Job Posting (https://bolt.eu/job)',
       link: 'https://www.google.com/calendar/event?eid=abc'

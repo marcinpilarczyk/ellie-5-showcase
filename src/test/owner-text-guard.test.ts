@@ -9,7 +9,7 @@ import { RunTraceStore } from '../storage/run-trace-store.js';
 import { ToolDispatcher } from '../governance/dispatcher.js';
 import { UnifiedAgentRunner } from '../agent/runner.js';
 import { ModelRouter, ModelCallResponse } from '../models/model-router.js';
-import { ClaimsBankGuard, extractIdentityDetails } from '../governance/claims-bank.js';
+import { ClaimsBankGuard, extractIdentityDetails, reviewOwnerText } from '../governance/claims-bank.js';
 import { buildRuntime } from '../runtime/build-runtime.js';
 
 // Owner sources as the guard loads them (stand-ins for the profile, record and Claims Bank Docs).
@@ -147,6 +147,19 @@ describe('Owner text guard (any tool that writes for the owner)', () => {
       bare.dispatch('made_up_note_write', { t: 'hello' }, { runId: 'r3', isInteractive: true, toolGrant: { allowedToolNames: new Set(['made_up_note_write']), allowConsequential: false } }),
       /no claims guard is configured/
     );
+  });
+
+  it('fails closed for documents when the Claims Bank cannot be read', async () => {
+    const unavailable = new ClaimsBankGuard(
+      async () => { throw new Error('bank unavailable'); },
+      60_000,
+      async () => ({ texts: [PROFILE], missing: [] })
+    );
+    const review = await reviewOwnerText(unavailable, 'document', 'A document with unverified claims.', {
+      evidence: [],
+      identity: true
+    });
+    assert.ok(review.refusals.some(refusal => /CLAIMS_BANK_UNAVAILABLE/.test(refusal)));
   });
 
   it('extracts identity details but not dates, year ranges or bare words', () => {

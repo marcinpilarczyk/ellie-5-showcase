@@ -1,8 +1,12 @@
 # Ellie v5: Complete Architecture, Features & Capabilities Inventory
 
+> **Showcase scope:** This is a reference implementation, not a supported deployment contract.
+> Configured external providers process task content. Security and data-handling requirements
+> must be reviewed independently before use with real accounts.
+
 > **Operating Doctrine**: *"Ellie owns the work. The owner owns decisions and commitments. Host code owns authority."* ([docs/ELLIE_DESIGN.md](ELLIE_DESIGN.md), [src/agent/prefix-builder.ts](../src/agent/prefix-builder.ts))
 
-**Ellie v5** (`v5.0.0`, clean-slate rebuild initiated Oct 14, 2026) is a private, single-tenant, Slack-first AI Chief of Staff built for a single owner (`ELLIE_OWNER_NAME` / `ELLIE_OWNER_FULL_NAME`). It combines multi-tier Gemini reasoning and vision with deterministic host-code governance (Principles P1–P13), an append-only human-in-the-loop Action Ledger, zero-hallucination outbound text/document verification, dual-engine formatted document generation, proactive background sentinels, scheduled routines, and a self-hosted Web Control Plane & Spaces gallery.
+**Ellie v5** (`v5.0.0`) is a single-tenant, Slack-first AI Chief of Staff showcase built for one configured owner (`ELLIE_OWNER_NAME` / `ELLIE_OWNER_FULL_NAME`). It combines multi-tier Gemini reasoning and vision with host-code governance, an Action Ledger with append-only state history, heuristic outbound claims checks, dual-engine document generation, proactive sentinels, scheduled routines, and a Web Control Plane & Spaces gallery.
 
 ---
 
@@ -79,7 +83,7 @@ flowchart TD
 | **Language & Runtime** | TypeScript `^5.8.2` (`ES2022`, `NodeNext` ESM), Node.js `>=22.13.0` | `package.json`, `tsconfig.json` |
 | **Database** | Node built-in `node:sqlite` (`DatabaseSync`) in `WAL` mode (`app.sqlite` + `ledger.sqlite`) | `src/storage/database.ts` |
 | **AI SDK** | `@google/genai` (`^2.27.0`) — Gemini Flash, Gemini Reasoning (Argon/Pro), Nano Banana Image, Google Search Grounding, Context Caching | `src/models/model-router.ts` |
-| **HTTP & Web** | `express` (`^4.21.2`) + Zero-build single-file dark-mode SPA | `src/http/app.ts`, `src/web/index.html` |
+| **HTTP & Web** | `express` (`^4.22.3`) + zero-build single-file dark-mode SPA | `src/http/app.ts`, `src/web/index.html` |
 | **Document Rendering** | `docx` (`9.7.2`) + `jszip` (`3.10.1`), bundled OFL `Merriweather` & `Google Sans Text` TTFs, headless LibreOffice (`soffice`), Poppler (`pdfinfo`, `pdftotext`, `pdftoppm`), headless Chromium/Chrome/Edge | `src/documents/render-docx.ts`, `src/documents/pdf.ts`, `src/documents/render-html-pdf.ts` |
 | **Mail & Workspace** | `googleapis` (`^144.0.0`), `imapflow` (`^1.0.171`), `mailparser` (`^3.7.2`), `nodemailer` (`^6.10.0`) | `src/integrations/google/client.ts`, `src/integrations/proton/client.ts` |
 | **Prose Verification** | `python3` executing deterministic EN (`verify_humanization.py`) and PL (`sprawdz.py`) scanners | `src/governance/humanizer-scanner.ts` |
@@ -186,7 +190,7 @@ sequenceDiagram
 
 ---
 
-## 3. Complete Tool Inventory (74 Tools + Dynamic Composio Tools)
+## 3. Tool Inventory
 
 All tools below are **fully implemented** in `src/tools/*` and wired in `src/runtime/build-runtime.ts`.
 
@@ -224,7 +228,7 @@ All tools below are **fully implemented** in `src/tools/*` and wired in `src/run
 
 | Tool Name | Effect Class | Source File | Description |
 | :--- | :--- | :--- | :--- |
-| `owner_sources_read` | `READ` (`providesOwnerSources`) | `src/tools/owner-source-tools.ts` | Reads canonical Google Docs from the `ELLIE_CONFIG_DOC_ID` root folder, `Projects/` subfolders, `ELLIE_RECORD_DOC_ID`, and `ELLIE_CLAIMS_BANK_DOC_ID` (cached by `modifiedTime` in `owner_doc_cache`). |
+| `owner_sources_read` | `READ` (`providesOwnerSources`) | `src/tools/owner-source-tools.ts` | Reads canonical Google Docs from the `ELLIE_OWNER_CONFIG_DOC_ID` root folder, `Projects/` subfolders, `ELLIE_PROFESSIONAL_RECORD_DOC_ID`, and `ELLIE_CLAIMS_BANK_DOC_ID` (cached by `modifiedTime` in `owner_doc_cache`). |
 | `owner_text_check` | `READ` (`keepsDraft`, `notEvidence`) | `src/tools/owner-text-check-tool.ts` | Runs the full `reviewOwnerText` check (Claims Bank + Identity + EN/PL Humanizer) on plain `text` or document `blocks` and returns a `draftHandle` (`res_...`) for zero-copy reuse in write tools. |
 
 ### 3.4 Dual-Engine Document Rendering Tools (2 Tools — `src/tools/document-tools.ts`)
@@ -360,7 +364,7 @@ All tools below are **fully implemented** in `src/tools/*` and wired in `src/run
 | `workspace_aliases` | v1 | Friendly alias names mapped to Google Drive/Doc/Sheet IDs. |
 | `api_usage` | v1 | Per-call token & USD spend telemetry across Gemini Flash, Reasoning, and Apify. |
 | `scheduled_reminders` | v1 | Timed Slack reminders. |
-| `owner_config_cache` | v1 | Cached copy of the owner's `ELLIE_CONFIG_DOC_ID` Google Doc. |
+| `owner_config_cache` | v1 | Cached copy of the owner's `ELLIE_OWNER_CONFIG_DOC_ID` Google Doc. |
 | `nudge_log` | v1 | Audit & deduplication log of `SENT`, `HELD`, `DROPPED`, and `DIGESTED` nudges. |
 | `owner_doc_inventory` | v3 | Nightly Flash-summarized map of the owner's Google Docs (`title`, `folder`, `purpose`). |
 | `authored_resources` | v5 | Registry of Doc/file IDs created by Ellie (prevents self-referential grounding). |
@@ -408,7 +412,7 @@ All tools below are **fully implemented** in `src/tools/*` and wired in `src/run
 
 ## 8. Implementation Status & Audit Notes
 
-- **Fully Implemented**: All 74 static tools (59 core/conditional + 15 additional MCP/Composio/management tools), dual SQLite schemas, both document rendering engines (DOCX+LibreOffice and HTML/SVG+Chromium), Nano Banana image generation/editing, inbound Slack vision, proactive sentinels, cron routines with evaluator pass, RRSI memory regularization, and the Web Control Plane are fully implemented and covered by **41 test suites** (`src/test/*.test.ts`).
+- **Implemented showcase paths**: the registered native and gateway tools, dual SQLite schemas, both document rendering engines (DOCX+LibreOffice and HTML/SVG+Chromium), image generation, inbound Slack vision, proactive sentinels, cron routines with an optional evaluator pass, RRSI memory regularization, and the Web Control Plane. Coverage is measured by the automated test suite, not by a hard-coded tool count.
 - **Audio / Voice**: Not implemented (no TTS/STT or real-time voice streaming in v5).
 - **Per-Run Tool Grant Alias Nuance (`src/integrations/slack/coworker.ts`)**:
   - A few constant arrays in `coworker.ts` list legacy tool aliases (e.g., `gmail_get_thread` instead of `gmail_read`, `composio_search_free_tools` instead of `composio_search_tools`).

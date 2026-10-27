@@ -64,9 +64,9 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
         postMessage: async () => ({ ok: true, ts: '999.001' }),
         getConversationReplies: async (channel: string, threadTs: string) => {
           return [
-            { ts: '100.001', user: 'U04203APE', text: 'Should I apply? linkedin.com/jobs/view/4471339706' },
-            { ts: '100.002', bot_id: 'B0C66A0LHPZ', text: 'Yes, absolutely—this is an exceptionally strong match for your profile at Ocean Technologies Group.' },
-            { ts: '100.003', user: 'U04203APE', text: 'use our resume framework' }
+            { ts: '100.001', user: 'U0OWNERTEST', text: 'Should I apply? linkedin.com/jobs/view/1234567890' },
+            { ts: '100.002', bot_id: 'B0TESTBOT000', text: 'Yes, absolutely—this is an exceptionally strong match for your profile at Example Technologies Group.' },
+            { ts: '100.003', user: 'U0OWNERTEST', text: 'use our resume framework' }
           ];
         },
         downloadFile: async (url: string) => {
@@ -115,11 +115,11 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
 
       const event: SlackEventPayload = {
         type: 'message',
-        user: 'U04203APE',
+        user: 'U0OWNERTEST',
         text: 'use our resume framework',
         ts: '100.003',
         thread_ts: '100.001',
-        channel: 'C0B1HV10G9H'
+        channel: 'C0TESTCHANNEL'
       };
 
       await service.handleUserMessage(event);
@@ -128,9 +128,9 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
       assert.ok(lastRunnerOpts.conversationHistory, 'conversationHistory should be present');
       assert.equal(lastRunnerOpts.conversationHistory.length, 2, 'Should contain 2 prior turns (root user + bot reply)');
       assert.equal(lastRunnerOpts.conversationHistory[0].role, 'user');
-      assert.equal(lastRunnerOpts.conversationHistory[0].parts[0].text, 'Should I apply? linkedin.com/jobs/view/4471339706');
+      assert.equal(lastRunnerOpts.conversationHistory[0].parts[0].text, 'Should I apply? linkedin.com/jobs/view/1234567890');
       assert.equal(lastRunnerOpts.conversationHistory[1].role, 'model');
-      assert.ok(lastRunnerOpts.conversationHistory[1].parts[0].text.includes('Ocean Technologies Group'));
+      assert.ok(lastRunnerOpts.conversationHistory[1].parts[0].text.includes('Example Technologies Group'));
     });
 
     it('downloads and passes image attachments as inlineData parts', async () => {
@@ -142,11 +142,11 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
 
       const event: SlackEventPayload = {
         type: 'message',
-        user: 'U04203APE',
+        user: 'U0OWNERTEST',
         text: 'look at this DM screenshot',
         ts: '100.004',
         thread_ts: '100.001',
-        channel: 'C0B1HV10G9H',
+        channel: 'C0TESTCHANNEL',
         files: [
           {
             id: 'F123',
@@ -203,10 +203,10 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
 
       const event: SlackEventPayload = {
         type: 'message',
-        user: 'U04203APE',
+        user: 'U0OWNERTEST',
         text: 'review the latest pipeline sheet',
         ts: '100.005',
-        channel: 'C0B1HV10G9H',
+        channel: 'C0TESTCHANNEL',
         files: [
           {
             id: 'F_XLSX_1',
@@ -244,7 +244,7 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
 
       const secret = 'test-secret';
       process.env.SLACK_SIGNING_SECRET = secret;
-      process.env.SLACK_OWNER_USER_ID = process.env.SLACK_OWNER_USER_ID || 'U04203APE';
+      process.env.SLACK_OWNER_USER_ID = process.env.SLACK_OWNER_USER_ID || 'U0OWNERTEST';
       const router = createSlackRouter(mockCoworkerService);
 
       const routeLayer = (router as any).stack.find((s: any) => s.route?.path === '/events');
@@ -256,11 +256,11 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
         event_id: 'Ev12345',
         event: {
           type: 'message',
-          user: process.env.SLACK_OWNER_USER_ID || 'U04203APE',
+          user: process.env.SLACK_OWNER_USER_ID || 'U0OWNERTEST',
           text: '@Ellie Should I apply?',
           ts: '1791933382.630579',
           client_msg_id: 'client-uuid-1111',
-          channel: 'C0B1HV10G9H'
+          channel: 'C0TESTCHANNEL'
         }
       };
 
@@ -401,10 +401,10 @@ describe('Slack Conversational Memory & Event Dedup Suite', () => {
 
       const event: SlackEventPayload = {
         type: 'message',
-        user: 'U04203APE',
+        user: 'U0OWNERTEST',
         text: 'what is the problem?',
         ts: '100.005',
-        channel: 'C0B1HV10G9H'
+        channel: 'C0TESTCHANNEL'
       };
 
       await service.handleUserMessage(event);

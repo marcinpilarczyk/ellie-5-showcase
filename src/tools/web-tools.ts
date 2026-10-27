@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import dns from 'node:dns';
+import net from 'node:net';
+import { Agent, fetch as undiciFetch } from 'undici';
 import { ToolDefinition } from '../types/tool.js';
 import { ModelRouter } from '../models/model-router.js';
 
@@ -35,6 +38,84 @@ export function extractTextFromHtml(html: string): { title: string; text: string
 }
 
 const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
+
+type WebFetch = (input: any, init?: any) => Promise<any>;
+
+/**
+ * Reject addresses that are not globally routable. This runs in the DNS lookup callback used by
+ * the HTTP connector, so a hostname cannot resolve public during validation and private when the
+ * connection is opened.
+ */
+export function isBlockedResolvedAddress(address: string): string | null {
+  const normalized = address.toLowerCase().replace(/^\[|\]$/g, '').split('%')[0];
+  const family = net.isIP(normalized);
+
+  if (family === 4) {
+    const octets = normalized.split('.').map(Number);
+    const [a, b, c] = octets;
+    if (a === 0 || a === 10 || a === 127) return `reserved IPv4 address ${normalized}`;
+    if (a === 100 && b >= 64 && b <= 127) return `carrier-grade NAT address ${normalized}`;
+    if (a === 169 && b === 254) return `link-local address ${normalized}`;
+    if (a === 172 && b >= 16 && b <= 31) return `private IPv4 address ${normalized}`;
+    if (a === 192 && b === 168) return `private IPv4 address ${normalized}`;
+    if (a === 192 && b === 0 && c === 0) return `reserved IPv4 address ${normalized}`;
+    if (a === 198 && (b === 18 || b === 19)) return `benchmark IPv4 address ${normalized}`;
+    if (a >= 224) return `multicast or reserved IPv4 address ${normalized}`;
+    return null;
+  }
+
+  if (family === 6) {
+    if (normalized === '::' || normalized === '::1') return `loopback or unspecified IPv6 address ${normalized}`;
+    if (/^f[cd]/.test(normalized)) return `private IPv6 address ${normalized}`;
+    if (/^fe[89ab]/.test(normalized)) return `link-local IPv6 address ${normalized}`;
+    if (/^ff/.test(normalized)) return `multicast IPv6 address ${normalized}`;
+    // IPv4-mapped and NAT64 forms can conceal an internal IPv4 address.
+    if (normalized.startsWith('::ffff:') || normalized.startsWith('64:ff9b:')) {
+      return `mapped IPv6 address ${normalized}`;
+    }
+    return null;
+  }
+
+  return `unrecognised resolved address ${normalized}`;
+}
+
+function guardedLookup(hostname: string, options: any, callback: (...args: any[]) => void): void {
+  dns.lookup(hostname, { ...options, all: true, verbatim: true }, (error, addresses) => {
+    if (error) {
+      callback(error);
+      return;
+    }
+    const resolved = Array.isArray(addresses) ? addresses : [];
+    const blocked = resolved.map(entry => isBlockedResolvedAddress(entry.address)).find(Boolean);
+    if (blocked) {
+      callback(new Error(`Blocked resolved address for ${hostname}: ${blocked}`));
+      return;
+    }
+    callback(null, addresses);
+  });
+}
+
+const PUBLIC_WEB_AGENT = new Agent({
+  connect: {
+    lookup: guardedLookup as any
+  }
+});
+
+const defaultWebFetch: WebFetch = (input, init = {}) => undiciFetch(input, {
+  ...init,
+  dispatcher: PUBLIC_WEB_AGENT
+} as any);
+
+let webFetch: WebFetch = defaultWebFetch;
+
+/** Test seam: keeps provider-mocking simple while production always uses the guarded connector. */
+export function setWebFetchForTests(fetcher?: WebFetch): void {
+  webFetch = fetcher ?? defaultWebFetch;
+}
+
+export function jinaFallbackEnabled(): boolean {
+  return process.env.ELLIE_ENABLE_JINA_FALLBACK === 'true';
+}
 
 /** Job id of a LinkedIn job link (/jobs/view/<id>, /jobs/view/<slug>-<id>, or ?currentJobId=<id>). */
 export function linkedInJobId(url: string): string | null {
@@ -97,7 +178,7 @@ async function fetchGuestPosting(host: string, jobId: string, deadline: number):
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), Math.min(left, 10000));
   try {
-    const res = await fetch(`https://${host}/jobs-guest/jobs/api/jobPosting/${jobId}`, {
+    const res = await webFetch(`https://${host}/jobs-guest/jobs/api/jobPosting/${jobId}`, {
       signal: controller.signal,
       headers: { 'User-Agent': BROWSER_USER_AGENT, 'Accept': 'text/html' }
     });
@@ -135,10 +216,22 @@ export async function fetchLinkedInJob(jobId: string, timeoutMs = 15000, ownHost
 }
 
 export async function fetchViaJinaReader(url: string, timeoutMs = 20000): Promise<{ title: string; content: string; success: boolean }> {
+  if (!jinaFallbackEnabled()) {
+    return {
+      title: '',
+      content: 'External reader fallback is disabled. Set ELLIE_ENABLE_JINA_FALLBACK=true to opt in.',
+      success: false
+    };
+  }
+
+  const outbound = new URL(url);
+  outbound.username = '';
+  outbound.password = '';
+  const target = outbound.toString();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`https://r.jina.ai/${url}`, {
+    const res = await webFetch(`https://r.jina.ai/${target}`, {
       signal: controller.signal,
       headers: {
         'Accept': 'text/plain',
@@ -150,7 +243,7 @@ export async function fetchViaJinaReader(url: string, timeoutMs = 20000): Promis
       return { title: '', content: `Jina returned HTTP ${res.status}`, success: false };
     }
     const text = await res.text();
-    return { title: `Rendered: ${url}`, content: text, success: true };
+    return { title: `Rendered: ${target}`, content: text, success: true };
   } catch (err: any) {
     clearTimeout(timeout);
     return { title: '', content: err.message, success: false };
@@ -181,57 +274,9 @@ export function isBlockedUrl(urlStr: string): string | null {
     return `Blocked internal hostname: ${host}`;
   }
 
-  // IPv4 check
-  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4Match) {
-    const octets = ipv4Match.slice(1, 5).map(Number);
-    if (octets.some(o => o < 0 || o > 255)) {
-      return `Invalid IPv4 address: ${host}`;
-    }
-    const [a, b] = octets;
-    if (a === 0) {
-      return `Unspecified IPv4 address blocked: ${host}`;
-    }
-    if (a === 127) {
-      return `Loopback IPv4 address blocked: ${host}`;
-    }
-    if (a === 10) {
-      return `Private IPv4 address blocked: ${host}`;
-    }
-    if (a === 172 && b >= 16 && b <= 31) {
-      return `Private IPv4 address blocked: ${host}`;
-    }
-    if (a === 192 && b === 168) {
-      return `Private IPv4 address blocked: ${host}`;
-    }
-    if (a === 169 && b === 254) {
-      return `Link-local IPv4 address blocked: ${host}`;
-    }
-  }
-
-  // IPv6 check
-  if (
-    host === '::1' ||
-    host === '::' ||
-    host === '0000:0000:0000:0000:0000:0000:0000:0001' ||
-    host === '0:0:0:0:0:0:0:1' ||
-    host === '0:0:0:0:0:0:0:0'
-  ) {
-    return `Loopback/unspecified IPv6 address blocked: ${host}`;
-  }
-
-  if (/^f[cd][0-9a-f]{0,2}:/i.test(host) || host.startsWith('fc') || host.startsWith('fd')) {
-    return `Private IPv6 address blocked: ${host}`;
-  }
-
-  if (/^fe[89ab][0-9a-f]{0,1}:/i.test(host)) {
-    return `Link-local IPv6 address blocked: ${host}`;
-  }
-
-  if (host.startsWith('::ffff:')) {
-    const mapped = host.slice(7);
-    const subCheck = isBlockedUrl(`http://${mapped}`);
-    if (subCheck) return subCheck;
+  if (net.isIP(host)) {
+    const blocked = isBlockedResolvedAddress(host);
+    if (blocked) return `Blocked ${blocked}`;
   }
 
   return null;
@@ -273,7 +318,7 @@ export async function fetchWebPage(url: string, timeoutMs = 15000): Promise<{ ti
     let hops = 0;
 
     while (hops <= 3) {
-      res = await fetch(currentUrl, {
+      const response: Response = await webFetch(currentUrl, {
         signal: controller.signal,
         redirect: 'manual',
         headers: {
@@ -281,9 +326,10 @@ export async function fetchWebPage(url: string, timeoutMs = 15000): Promise<{ ti
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
         }
       });
+      res = response;
 
-      if (res.status >= 300 && res.status < 400 && res.headers.has('location')) {
-        const loc = res.headers.get('location')!;
+      if (response.status >= 300 && response.status < 400 && response.headers.has('location')) {
+        const loc = response.headers.get('location')!;
         const nextUrl = new URL(loc, currentUrl).toString();
         const redirectReason = isBlockedUrl(nextUrl);
         if (redirectReason) {
@@ -368,7 +414,7 @@ export function createWebTools(modelRouter?: ModelRouter): ToolDefinition[] {
   // 2. paged web_read_page
   tools.push({
     name: 'web_read_page',
-    description: 'Reads the readable text of a web page URL, with a headless proxy fallback for JavaScript SPAs. Long pages come back as a preview plus a handle; read further with result_read instead of fetching again.',
+    description: 'Reads the readable text of a public web page URL. An external rendering fallback for JavaScript-heavy pages is available only when the operator enables it. Long pages come back as a preview plus a handle; read further with result_read instead of fetching again.',
     effectClass: 'READ',
     schema: z.object({
       url: z.string().url().describe('The URL of the webpage to fetch and read')

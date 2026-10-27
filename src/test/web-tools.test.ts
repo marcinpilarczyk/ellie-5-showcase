@@ -1,6 +1,14 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { linkedInJobId, linkedInRegionalHost, fetchLinkedInJob, extractLinkedInJob, fetchWebPage } from '../tools/web-tools.js';
+import {
+  linkedInJobId,
+  linkedInRegionalHost,
+  fetchLinkedInJob,
+  extractLinkedInJob,
+  fetchWebPage,
+  isBlockedResolvedAddress,
+  setWebFetchForTests
+} from '../tools/web-tools.js';
 
 // Same structure as LinkedIn's public jobs-guest fragment; made-up content
 const GUEST_FRAGMENT = `
@@ -30,8 +38,18 @@ const GUEST_FRAGMENT = `
 </ul>`;
 
 describe('LinkedIn job links', () => {
-  const realFetch = globalThis.fetch;
-  afterEach(() => { globalThis.fetch = realFetch; });
+  afterEach(() => {
+    setWebFetchForTests();
+    delete process.env.ELLIE_ENABLE_JINA_FALLBACK;
+  });
+
+  it('rejects private and special resolved addresses, including metadata and CGNAT', () => {
+    for (const address of ['127.0.0.1', '10.1.2.3', '169.254.169.254', '100.100.100.200', '::1', 'fd00::1', 'fe80::1', '::ffff:7f00:1']) {
+      assert.ok(isBlockedResolvedAddress(address), `${address} should be blocked`);
+    }
+    assert.equal(isBlockedResolvedAddress('93.184.216.34'), null);
+    assert.equal(isBlockedResolvedAddress('2606:4700:4700::1111'), null);
+  });
 
   it('finds the job id in every common link shape', () => {
     assert.equal(linkedInJobId('https://www.linkedin.com/jobs/view/4479093378/'), '4479093378');
@@ -55,10 +73,10 @@ describe('LinkedIn job links', () => {
 
   it('web_read_page fetches the guest posting directly, without Jina', async () => {
     const requested: string[] = [];
-    globalThis.fetch = (async (url: any) => {
+    setWebFetchForTests(async (url: any) => {
       requested.push(String(url));
       return new Response(GUEST_FRAGMENT, { status: 200 });
-    }) as typeof fetch;
+    });
 
     const page = await fetchWebPage('https://www.linkedin.com/jobs/view/4479093378/');
     assert.equal(page.status, 'SUCCESS');
@@ -67,13 +85,14 @@ describe('LinkedIn job links', () => {
   });
 
   it('reads the guest posting through Jina when the endpoint is rate-limited', async () => {
+    process.env.ELLIE_ENABLE_JINA_FALLBACK = 'true';
     const requested: string[] = [];
-    globalThis.fetch = (async (url: any) => {
+    setWebFetchForTests(async (url: any) => {
       requested.push(String(url));
       return String(url).startsWith('https://r.jina.ai/')
         ? new Response('**Implementation Lead**\n' + 'Lead onboarding. '.repeat(40), { status: 200 })
         : new Response('', { status: 429 });
-    }) as typeof fetch;
+    });
 
     const page = await fetchWebPage('https://www.linkedin.com/jobs/view/4479093378/', 15000);
     assert.equal(page.status, 'SUCCESS');
@@ -84,12 +103,12 @@ describe('LinkedIn job links', () => {
 
   it('tries the link\'s own regional host when www is refused, and retries once after a 429', async () => {
     const requested: string[] = [];
-    globalThis.fetch = (async (url: any) => {
+    setWebFetchForTests(async (url: any) => {
       requested.push(String(url));
       return String(url).startsWith('https://pl.linkedin.com/')
         ? new Response(GUEST_FRAGMENT, { status: 200 })
         : new Response('', { status: 429 });
-    }) as typeof fetch;
+    });
     const own = await fetchLinkedInJob('4479093378', 15000, linkedInRegionalHost('https://pl.linkedin.com/jobs/view/x-4479093378'), 10);
     assert.equal(own?.title, 'Implementation Lead at Example Co');
     assert.deepEqual(requested.map(u => new URL(u).host), ['www.linkedin.com', 'pl.linkedin.com']);
@@ -97,18 +116,29 @@ describe('LinkedIn job links', () => {
 
     requested.length = 0;
     let calls = 0;
-    globalThis.fetch = (async (url: any) => {
+    setWebFetchForTests(async (url: any) => {
       requested.push(String(url));
       return ++calls === 1 ? new Response('', { status: 429 }) : new Response(GUEST_FRAGMENT, { status: 200 });
-    }) as typeof fetch;
+    });
     const retried = await fetchLinkedInJob('4479093378', 15000, null, 10);
     assert.equal(retried?.title, 'Implementation Lead at Example Co');
     assert.equal(requested.length, 2);
   });
 
   it('reports BLOCKED, not a generic read, when every LinkedIn route refuses', async () => {
-    globalThis.fetch = (async () => new Response('', { status: 403 })) as typeof fetch;
+    setWebFetchForTests(async () => new Response('', { status: 403 }));
     const page = await fetchWebPage('https://www.linkedin.com/jobs/view/4479093378/', 3000);
     assert.equal(page.status, 'BLOCKED');
+  });
+
+  it('never sends a URL to an external reader unless the operator explicitly opts in', async () => {
+    const requested: string[] = [];
+    setWebFetchForTests(async (url: any) => {
+      requested.push(String(url));
+      return new Response('', { status: 429 });
+    });
+    const page = await fetchWebPage('https://www.linkedin.com/jobs/view/4479093378/', 3000);
+    assert.equal(page.status, 'BLOCKED');
+    assert.ok(requested.every(url => !url.startsWith('https://r.jina.ai/')));
   });
 });

@@ -24,7 +24,8 @@ export function createOpsRouter(
   slackClient?: SlackClient,
   protonClient?: ProtonMailClient,
   modelRouter?: ModelRouter,
-  ledgerRepo?: ActionLedgerRepository
+  ledgerRepo?: ActionLedgerRepository,
+  claimsBankConfigured = false
 ): Router {
   const router = Router();
 
@@ -39,6 +40,7 @@ export function createOpsRouter(
       googleConnected: Boolean(googleClient?.isConnected()),
       slackConfigured: Boolean(slackClient?.isConfigured()),
       protonConfigured: Boolean(protonClient?.isEnabled()),
+      claimsBankConfigured,
       flashModel: modelRouter?.flashModel || '',
       reasoningModel: modelRouter?.reasoningModel || '',
       activeRoutinesCount: activeRoutines.length,
