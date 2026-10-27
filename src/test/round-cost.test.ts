@@ -165,7 +165,7 @@ describe('short carried results go inline into a Slack follow-up (any tool)', ()
     const db = new DatabaseSync(':memory:');
     initializeAppDatabase(db);
     const store = new ResultStore(db);
-    const guard = new ClaimsBankGuard(async () => '# Claims Bank', 60_000, async () => ({ texts: [PROFILE], missing: [] }));
+    const guard = new ClaimsBankGuard(async () => '# Claims Bank\n1. Placeholder claim. [V]', 60_000, async () => ({ texts: [PROFILE], missing: [] }));
     const dispatcher = new ToolDispatcher(undefined, store, guard);
     const written: string[] = [];
     const called: string[] = [];

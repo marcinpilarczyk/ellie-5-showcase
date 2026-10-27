@@ -57,7 +57,7 @@ export function extractDiffSpecificTokens(
     }
   }
 
-  // Alphanumeric IDs (e.g. th_123, act_999, inv_123, C0B1HV10G9H, /EllieOS/..., 179... thread IDs, UUIDs)
+  // Alphanumeric IDs (e.g. th_123, act_999, inv_123, C0EXAMPLE, /EllieOS/..., 179... thread IDs, UUIDs)
   const idMatches = combined.match(/(?:\b[a-zA-Z]{2,8}_[a-zA-Z0-9_-]{3,}\b|\b[CUW][0-9A-Z]{8,}\b|\/EllieOS\/[\w/.-]+|\b17\d{8,}(?:\.\d+)?\b|\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b)/g) ?? [];
   for (const idToken of idMatches) {
     specificTokens.add(idToken.trim().toLowerCase());

@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ellie.app.data.EllieApiClient
@@ -119,6 +120,7 @@ fun SettingsScreen(
                     label = { Text("Control Plane Token (Bearer)", color = TextSecondary) },
                     placeholder = { Text("Optional when on Tailscale private port", color = TextMuted) },
                     singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
@@ -156,9 +158,14 @@ fun SettingsScreen(
                         onClick = {
                             scope.launch {
                                 isSaving = true
-                                serverPrefs.saveBaseUrl(baseUrlInput)
-                                serverPrefs.saveControlPlaneToken(tokenInput)
-                                refreshStatus()
+                                runCatching {
+                                    serverPrefs.saveBaseUrl(baseUrlInput)
+                                    serverPrefs.saveControlPlaneToken(tokenInput)
+                                }.onSuccess {
+                                    refreshStatus()
+                                }.onFailure {
+                                    testResult = "Not saved: ${it.message}"
+                                }
                                 isSaving = false
                             }
                         },

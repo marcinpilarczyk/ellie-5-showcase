@@ -39,7 +39,7 @@ describe('Chief of Staff Next Phase: Tracks A, D, B, C', () => {
     routineRepo = new RoutineRepository(appDb);
   });
 
-  // --- Track A: Zero-Hallucination Grounding ---
+  // --- Track A: Claims Grounding ---
   describe('Track A: Document & Reply Grounding', () => {
     it('reviewOwnerText allows section/role capitalized words in documents but blocks invented figures', async () => {
       const claimsDoc = '# Claims Bank\n1. Built a high-velocity support team of 12 people. [V]';

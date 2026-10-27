@@ -160,6 +160,7 @@ describe('HTTP API & control page endpoints', () => {
     assert.equal(typeof data.googleConnected, 'boolean');
     assert.equal(typeof data.slackConfigured, 'boolean');
     assert.equal(typeof data.protonConfigured, 'boolean');
+    assert.equal(typeof data.claimsBankConfigured, 'boolean');
     assert.equal(typeof data.flashModel, 'string');
     assert.equal(typeof data.reasoningModel, 'string');
     assert.equal(typeof data.activeRoutinesCount, 'number');

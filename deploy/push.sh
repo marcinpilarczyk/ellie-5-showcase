@@ -17,18 +17,34 @@ ssh "$HOST" "sudo -u ellie bash -lc '
   export HOME=/home/ellie
   export PATH=/home/ellie/.local/bin:\$PATH XDG_RUNTIME_DIR=/run/user/\$(id -u)
   cd /home/ellie/ellie.new
-  cp -p /home/ellie/ellie/.env .env 2>/dev/null || cp -p /home/ellie/ellie.prev/.env .env
   echo $SHA > DEPLOYED_COMMIT
   npm ci --no-audit --no-fund --loglevel=error
   npm run build --silent
+  cp -p /home/ellie/ellie/.env .env 2>/dev/null || cp -p /home/ellie/ellie.prev/.env .env
   node --env-file=.env dist/scripts/doctor.js
   cd /home/ellie
   if [ -d /home/ellie/ellie ]; then
     rm -rf /home/ellie/ellie.prev && mv /home/ellie/ellie /home/ellie/ellie.prev
   fi
   mv /home/ellie/ellie.new /home/ellie/ellie
-  systemctl --user restart ellie.service
+  rollback() {
+    if [ -d /home/ellie/ellie.prev ]; then
+      rm -rf /home/ellie/ellie.failed
+      mv /home/ellie/ellie /home/ellie/ellie.failed
+      mv /home/ellie/ellie.prev /home/ellie/ellie
+      systemctl --user restart ellie.service || true
+      echo "Deployment failed health checks; restored /home/ellie/ellie.prev." >&2
+    fi
+  }
+  if ! systemctl --user restart ellie.service; then
+    rollback
+    exit 1
+  fi
   sleep 3
-  curl -fsS http://127.0.0.1:3001/api/health && echo
+  if ! curl -fsS http://127.0.0.1:3001/api/health; then
+    rollback
+    exit 1
+  fi
+  echo
 '"
 echo "Deployed $SHA. Roll back: ssh $HOST 'sudo -u ellie bash -c \"mv /home/ellie/ellie /home/ellie/ellie.bad && mv /home/ellie/ellie.prev /home/ellie/ellie\"' then restart ellie.service"

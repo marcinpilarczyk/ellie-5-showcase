@@ -1,5 +1,9 @@
 # Ellie v5 plan
 
+> **Historical engineering log:** Status entries preserve the evidence and measurements available
+> at the time. They are not current deployment instructions and may describe paths or limitations
+> that were later changed. Treat this file as a development record, not a support contract.
+
 Status 2026-10-17 (Phase 1-3 Android Mobile Native App, Gemini Live Voice & Meeting Recorder):
 - **Android Native App (`android/`, com.ellie.app):** Jetpack Compose Material 3 dark-palette native client for Android 10+ (API 29–35). Complete parity across all 6 core tabs: Approvals & Queue (staged payloads, inline JSON edit, approve/drop batch), Routines & Sentinels, Execution Observability Runs & Traces, Cost & Token Spending Telemetry, Spaces & Dashboards WebView gallery, and Live Settings.
 - **Two-Way Live Voice & Audio Synthesis (`src/http/routes/voice.ts`, `src/models/model-router.ts`):** Fast multimodal Gemini 3.8 Flash audio turn endpoints (`/api/voice/turn` and `/api/voice/meeting`) supporting bidirectional audioBase64 ingest, streaming speech synthesis via Gemini Flash Lite TTS, and session-aware conversational memory.
@@ -20,7 +24,7 @@ Status 2026-10-17 (Composio Tool Discovery, Security Hardening & Optimizations):
 - **Security Hardening & Latency Optimizations:** Unified email triage pipeline (`email-triage.ts`), robust directory swap in `deploy/push.sh`, rate-limit resilience for public web scraping, and sentinel draft verification via `reviewOwnerText`. Tests: `src/test/security-and-hardening.test.ts`.
 
 Status 2026-10-17 (Chief of Staff Next Phase: Tracks A, D, B, and C Complete):
-- **Track A (Zero-Hallucination Grounding):**
+- **Track A (Claims Grounding):**
   1. Extended `reviewOwnerText` to run deterministic Claims Bank figure & `[X]` never-claim checks on `kind === 'document'` (`skipNamedEntities: true`), preventing invented metrics in formatted documents while allowing ordinary section/role headers.
   2. Extended `groundReply` (`src/governance/reply-grounding.ts`, P8) to check hard quantitative figures (percentages, currencies, and non-time unit numbers $\ge 2$) against tool results and user/executive evidence texts, flagging ungrounded figures with a clear note.
 - **Track D (RRSI-Regularized Self-Improvement, arXiv:2609.24972v3):**
@@ -124,9 +128,9 @@ Exit criteria: all 7 acceptance checks pass live, every recreated routine delive
 | 6 | Background continuation for work beyond ~5 minutes | Today it ends BLOCKED with "reply continue" | **Done** (`65ed95c`) |
 | 7 | Evaluator pass for routines that declare one | Quality check on long research packs | **Done** |
 
-## Next Phase Roadmap: Proactive, Zero-Hallucination, Execution-Biased, Self-Improving Chief of Staff (2026-10-17)
+## Next Phase Roadmap: Proactive, Grounded, Execution-Biased, Self-Improving Chief of Staff (2026-10-17)
 
-### Track A — Zero-Hallucination Grounding (Document Figures & Slack Reply Numbers)
+### Track A — Claims Grounding (Document Figures & Slack Reply Numbers)
 1. **Claims Bank Figure & `[X]` Never-Claim Check on Documents (`src/governance/claims-bank.ts`):**
    - Extend `reviewOwnerText` so `kind === 'document'` (`document_render`, `visual_document_render`, `docs_create`) runs the deterministic Claims Bank figure check (`extractClaimKeys`) and `[X]` never-claim rules in addition to `checkIdentity`.
    - Keep the capitalized `namedEntities` result-verb check scoped to `kind === 'message'` (`skipNamedEntities: true` for documents) so ordinary document headings/words are not false-flagged while invented metrics (like `"~60 remote vendor engineers with 7 direct reports"`) are deterministically blocked before rendering.

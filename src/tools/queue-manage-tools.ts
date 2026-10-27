@@ -21,7 +21,7 @@ export function createQueueManageTools(
       ]).describe('Action to perform on the approval queue (approve and execute are strictly prohibited)'),
       action_id: z.string().optional().describe('Action ID (for update_staged_payload, drop_action)'),
       batch_id: z.string().optional().describe('Batch ID (for drop_batch or filtering list_staged)'),
-      payload: z.record(z.any()).optional().describe('Updated JSON payload (for update_staged_payload)'),
+      payload: z.record(z.string(), z.any()).optional().describe('Updated JSON payload (for update_staged_payload)'),
       max_age_hours: z.number().optional().default(24).describe('Maximum age in hours before dropping staged action (for clear_stale)'),
       reason: z.string().optional().describe('Reason for dropping action or batch')
     }),

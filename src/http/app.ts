@@ -101,7 +101,8 @@ export function createApp(runtime: Runtime): Express {
     runtime.slackClient,
     runtime.protonClient,
     runtime.modelRouter,
-    runtime.ledgerRepo
+    runtime.ledgerRepo,
+    Boolean(runtime.aliasRepo.resolveId('claims_bank_doc') || process.env.ELLIE_CLAIMS_BANK_DOC_ID?.trim())
   ));
 
 function escapeHtml(s: string): string {

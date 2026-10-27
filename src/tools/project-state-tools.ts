@@ -204,7 +204,7 @@ export function createProjectStateTools(adapter: ProjectStateAdapter): ToolDefin
     effectClass: 'INTERNAL_REVERSIBLE_WRITE',
     schema: z.object({
       project: z.string().describe('The project directory name (e.g. "JOB_SEARCH", "ADVISORY", "ELLIE_V5")'),
-      sections: z.record(z.string()).describe(
+      sections: z.record(z.string(), z.string()).describe(
         'Map of section updates. Allowed section keys: "objective", "current_status", "active_workstreams", "open_loops", "key_decisions", "risks_blockers", "next_actions", "linked_artifacts"'
       ),
       notes: z.string().optional().describe('Optional context or changelog note for this update')

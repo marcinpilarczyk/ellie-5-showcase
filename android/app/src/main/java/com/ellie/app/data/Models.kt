@@ -211,6 +211,7 @@ data class OpsStatusResponse(
     val googleConnected: Boolean = false,
     val slackConfigured: Boolean = false,
     val protonConfigured: Boolean = false,
+    val claimsBankConfigured: Boolean = false,
     val flashModel: String = "",
     val reasoningModel: String = "",
     val activeRoutinesCount: Int = 0,

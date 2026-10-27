@@ -565,9 +565,7 @@ export async function reviewOwnerText(
     const checkOpts: CheckOptions = kind === 'document' ? { skipNamedEntities: true } : {};
     const bank = await checkFn(text, checkOpts);
     if (bank.blocked) {
-      if (!(kind === 'document' && bank.status === 'CLAIMS_BANK_UNAVAILABLE')) {
-        refusals.push(bank.message);
-      }
+      refusals.push(bank.message);
     }
   }
   if (options.identity && typeof guard.checkIdentity === 'function') {

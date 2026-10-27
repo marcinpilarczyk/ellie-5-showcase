@@ -134,6 +134,7 @@ configure() {
   [ -f "$APP_DIR/dist/index.js" ] || { echo "Run 'fetch' first." >&2; exit 1; }
   local NODE; NODE="$(node_bin)"
   mkdir -p "$DATA_DIR/private" "$UNIT_DIR"
+  chmod 700 "$DATA_DIR" "$DATA_DIR/private"
 
   say "Writing $APP_DIR/.env from the backup (values are not printed)"
   local env_out="$APP_DIR/.env"

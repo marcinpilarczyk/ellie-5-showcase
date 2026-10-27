@@ -6,6 +6,7 @@ After=network-online.target
 Type=simple
 WorkingDirectory=%h/ellie
 EnvironmentFile=%h/ellie/.env
+UMask=0077
 ExecStart=@NODE@ %h/ellie/dist/index.js
 Restart=on-failure
 RestartSec=5s

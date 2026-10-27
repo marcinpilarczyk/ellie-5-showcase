@@ -1,5 +1,9 @@
 # How Ellie Works: A Plain-English Guide to an AI Chief of Staff
 
+> **Showcase note:** This document explains the reference implementation. It is not a promise that
+> every path is production-ready. Ellie sends task content to external model and integration
+> providers; “private” here means single-tenant access, not that data never leaves the host.
+
 > *"The agent owns the work. The owner owns decisions and commitments. Code owns the authority."*
 
 ---
@@ -33,7 +37,8 @@ Large language models are notorious for two things:
 1. **Inventing facts** (fabricating past job titles, rounding up metrics, or making up phone numbers).
 2. **Accidental actions** (promising things to clients or sending unreviewed emails because of a misunderstanding).
 
-**Ellie was built from scratch to eliminate all three problems.**
+**Ellie was built to reduce all three problems with deterministic controls, explicit approval
+flows, and narrow background triggers.**
 
 ---
 
@@ -45,7 +50,7 @@ Everything in Ellie's design follows three fundamental principles:
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        THE THREE GOLDEN RULES                          │
 ├──────────────────────────────┬─────────────────────────────────────────┤
-│ 1. Cheap Triggers,           │ Watching costs $0.00. The AI brain only │
+│ 1. Cheap Triggers,           │ Polling is lightweight. The AI brain     │
 │    Expensive Thinking        │ wakes up when something actually changes│
 ├──────────────────────────────┼─────────────────────────────────────────┤
 │ 2. The Agent Proposes,       │ Ellie drafts the work; YOU approve the  │
@@ -60,9 +65,9 @@ Everything in Ellie's design follows three fundamental principles:
 Think of motion-sensor lights outside a house. You don't leave high-powered stadium floodlights burning 24/7 just in case someone walks by. The motion sensor costs pennies to run, and the bright lights only turn on when movement is detected.
 
 Ellie operates the same way:
-* Checking if you have new unread emails or if a Google Drive document was updated is handled by lightweight, zero-cost code running on your server.
+* Checking if you have new unread emails or if a Google Drive document was updated is handled by lightweight host code that does not call a language model.
 * The advanced AI models (Google Gemini) are only summoned when a new email arrives or an action needs genuine human-level reasoning.
-* **Result:** Total 24/7 background vigilance with near-zero operating costs.
+* **Result:** Polling does not require a model call. Hosting and provider prices still apply.
 
 ### Rule 2: The Agent Proposes, The Human Decides
 Ellie is strictly forbidden from executing outward-facing commitments on her own. 
@@ -102,7 +107,7 @@ You decide to apply. In the same Slack thread, you say:
 
 Within 45 seconds, Ellie:
 * Drafts a customized resume matching the company's specific requirements.
-* Runs it through her **Claims Bank** (making sure she didn't invent any fake dates, metrics, or technologies).
+* Runs supported claims through the **Claims Bank** heuristics and flags unsupported figures, contact details, and selected title/link patterns.
 * Formats it into an executive layout with professional typography (Merriweather & Google Sans Text).
 * Converts it into both a Microsoft Word `.docx` file and a pixel-perfect 2-page PDF.
 * Verifies that the PDF is exactly 2 pages (no awkward overflow lines on page 3) and readable by automated recruiting software (ATS).
@@ -120,22 +125,25 @@ A potential client emails you asking about your availability next week.
 ## 5. Ellie's Core Superpowers Explained Simply
 
 ### 1. The Action Ledger (Your Safety Net)
-Every single consequential action Ellie wants to take is assigned a unique ID in an immutable audit database called the **Action Ledger**.
+Every consequential action Ellie wants to take is assigned a unique ID in the **Action Ledger**. Proposal state changes are kept in an append-only transition history.
 * You can see every pending action in Slack or on a private Web Dashboard.
 * You can edit drafts directly in Slack by saying: *"Make the second paragraph shorter and more casual."* Ellie updates the staged card in real-time.
 * Once approved, Ellie verifies that the email or calendar event was actually delivered by reading it back from Google or Proton Mail before marking it "Done".
 
-### 2. The Claims Bank (The Anti-Hallucination Shield)
+### 2. The Claims Bank (A Heuristic Grounding Guard)
 AI models love to exaggerate. If an AI writes a cover letter, it might say: *"I grew team revenue by 300% and have 15 years of experience with Kubernetes."* If that's not true, your professional credibility is ruined.
 
 Ellie has a built-in fact-checker called the **Claims Bank Guard**:
-* Before any text or document leaves Ellie, it is scanned against your canonical master resume and verified facts sheet.
-* Every metric, percentage, company name, phone number, and job title must match your verified sources.
-* If Ellie tries to use an unverified claim, the system rejects her draft internally and commands her to rewrite it using only verified facts.
+* Supported outbound message paths are checked against configured owner sources and a claims document.
+* Common numeric, contact-detail, link, title, and experience patterns are compared with those sources.
+* Detected unsupported claims are rejected so the model can revise them.
+
+This is a heuristic guard, not proof of correctness. Coverage varies by tool, source configuration,
+and document type; important outbound material still needs human review.
 
 ### 3. The Dual-Engine Document Studio
 Most AI assistants output plain markdown text that looks messy when copied into Word. Ellie includes two dedicated document engines:
-* **The Executive Document Engine (Word & PDF):** Creates linear, ATS-compliant resumes, memos, and reports with beautiful typography, verified page margins, and guaranteed page counts.
+* **The Executive Document Engine (Word & PDF):** Creates linear resumes, memos, and reports with a consistent typographic system and checks configured page-count and reading-order targets.
 * **The Visual One-Pager Engine:** Creates stunning modern one-pagers, client pitch sheets, and workflow infographics using custom CSS grids, badges, and icons—automatically compressed into a single, elegant A4 page.
 
 ### 4. Interactive "Spaces" (Mini-Websites on Demand)
@@ -155,13 +163,15 @@ One of the hardest parts of running a business is remembering who hasn't answere
 ### 6. Humanizer: Natural, Trustworthy Writing
 AI text often has obvious "tells"—words like *delve, testament, tapestry, spearhead*, perfectly symmetrical bullet points, and robotic pleasantries.
 
-Ellie features a built-in **Humanizer Scanner** (supporting both English and contemporary Polish business standards). It automatically strips away artificial tropes, ensures varied sentence lengths, and ensures the tone sounds like a genuine, thoughtful human executive.
+Ellie features a built-in **Humanizer Scanner** for English and contemporary Polish business prose.
+It flags common artificial patterns and offers revision guidance; it does not guarantee a natural
+voice or rewrite every finding automatically.
 
 ---
 
 ## 6. The Web Control Dashboard
 
-Alongside Slack, Ellie runs a private, secure web dashboard accessible only to you:
+Alongside Slack, Ellie runs a token- or Tailscale-protected web dashboard:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -186,9 +196,11 @@ Alongside Slack, Ellie runs a private, secure web dashboard accessible only to y
 
 Ellie v5 represents a shift away from conversational gimmicks toward **dependable, governed automation**:
 
-1. **She works for YOU alone:** Single-tenant, completely private, and running on your own infrastructure.
-2. **She never oversteps:** Governed by deterministic host code and strict human-in-the-loop approvals.
-3. **She never hallucinates your credentials:** Guarded by an automated Claims Bank.
-4. **She costs pennies to run:** Architected around "Cheap triggers, expensive thinking."
+1. **Single tenant by design:** One owner controls the Slack and web surfaces, while configured cloud
+   providers still process task content.
+2. **Consequential actions are gated:** Host code stages external writes for explicit owner approval.
+3. **Claims are checked heuristically:** A Claims Bank and identity corpus reduce unsupported details,
+   but human review remains necessary.
+4. **Polling is separated from reasoning:** Cheap checks avoid model calls; provider usage still has a cost.
 
 Ellie isn't just an AI that chats—she is an executive partner that genuinely owns the work.

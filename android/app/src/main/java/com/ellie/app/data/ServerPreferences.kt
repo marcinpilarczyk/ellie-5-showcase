@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "ellie_preferences")
 
 class ServerPreferences(private val context: Context) {
+    private val secretStore = ControlPlaneSecretStore()
 
     companion object {
         val KEY_BASE_URL = stringPreferencesKey("base_url")
@@ -28,7 +29,8 @@ class ServerPreferences(private val context: Context) {
     }
 
     val controlPlaneToken: Flow<String> = context.dataStore.data.map { prefs ->
-        prefs[KEY_CONTROL_PLANE_TOKEN] ?: ""
+        val stored = prefs[KEY_CONTROL_PLANE_TOKEN] ?: ""
+        if (stored.isBlank()) "" else secretStore.decrypt(stored)
     }
 
     val wakeWordEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -41,6 +43,7 @@ class ServerPreferences(private val context: Context) {
 
     suspend fun saveBaseUrl(url: String) {
         val trimmed = url.trim().trimEnd('/')
+        require(trimmed.startsWith("https://")) { "Ellie requires an HTTPS URL." }
         context.dataStore.edit { prefs ->
             prefs[KEY_BASE_URL] = trimmed
         }
@@ -48,7 +51,7 @@ class ServerPreferences(private val context: Context) {
 
     suspend fun saveControlPlaneToken(token: String) {
         context.dataStore.edit { prefs ->
-            prefs[KEY_CONTROL_PLANE_TOKEN] = token.trim()
+            prefs[KEY_CONTROL_PLANE_TOKEN] = secretStore.encrypt(token.trim())
         }
     }
 

@@ -6,5 +6,6 @@ After=network-online.target
 Type=oneshot
 WorkingDirectory=%h/ellie
 EnvironmentFile=%h/ellie/.env
+UMask=0077
 ExecStart=@NODE@ %h/ellie/dist/wake.js
 TimeoutStartSec=15min

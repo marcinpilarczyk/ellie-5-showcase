@@ -189,7 +189,7 @@ export function createMcpGatewayTools(): ToolDefinition[] {
       description: `[MCP Gateway: ${rawToolName}] ${item.notes} (Fingerprint: ${item.fingerprint.slice(0, 8)}...)`,
       effectClass: item.effectClass,
       isAvailable: () => Boolean(gatewayUrl),
-      schema: z.record(z.any()).optional().default({}).describe('Parameters for gateway call'),
+      schema: z.record(z.string(), z.any()).optional().default({}).describe('Parameters for gateway call'),
       execute: async (params) => {
         if (!gatewayUrl) {
           return {

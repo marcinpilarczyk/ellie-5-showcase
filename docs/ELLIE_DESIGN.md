@@ -1,9 +1,14 @@
 # Ellie: Design Document and Lessons Learned
 
+> **Historical design notebook:** This file intentionally preserves decisions and post-mortems from
+> earlier Ellie versions. It is not a current deployment guide or a guarantee that every listed path
+> exists in this showcase. Use `README.md`, `docs/INVENTORY_PUBLIC.md`, and the source tree for the
+> current inventory.
+
 Status: living document. Written 2026-10-12 against `main` at `267cc94` (127 commits, 2026-10-04 to 2026-10-10).
 
 > **Three codebases.** Sections 3 to 9 describe **Ellie v2** (`ellie-v2`, about 27,900 LOC) as it stood at `267cc94`. **Ellie v4** (`ellie-v4`, 2026-10-13) was a partial rebuild that kept running on v2's databases and config; its post-mortem is [section 10.8](#108-ellie-v4-status-against-this-plan). **Ellie v5** (this repo, `ellie-v5`, 2026-10-14) is the clean cutover: [section 10.9](#109-ellie-v5-the-clean-cutover).
-Replaces the deleted `docs/ELLIE_V2_HARDENING_PLAN.md` and `docs/GROKBOT_VIKTOR_TRANSITION_SPEC.md`, whose useful content is folded in here. The token plan stays separate in [plans/token-reduction.md](plans/token-reduction.md).
+Replaces the deleted `docs/ELLIE_V2_HARDENING_PLAN.md` and `docs/GROKBOT_VIKTOR_TRANSITION_SPEC.md`, whose useful content is folded in here. The historical token-reduction plan is not included in this showcase.
 
 Purpose: if Ellie were rebuilt from zero, this is the brief. It records what we are trying to build, what the current code does, why each big decision was made, what went wrong, what other agents do well, and a recommended build order that avoids the known mistakes.
 
@@ -605,7 +610,7 @@ Started 2026-10-14 [code]. v4 was reported as a full replacement of v2, but its 
 - **Deterministic Last-Page Fill Check:** `lastPageFillProblems` (`src/documents/pdf.ts` and `src/tools/document-tools.ts`) detects sparse page 2 on resumes (<5 lines or <250 chars) in <10ms before paying 2–14s for visual check.
 - **Image Generation via Google Nano Banana & Metadata Stripping:** Native `image_generate`, `image_edit`, and `image_describe` tools with direct Slack upload (`slackClient.uploadFileV2`), multi-turn visual iteration, and automatic EXIF/GPS/metadata scrubbing.
 - **Composio Free Tool Discovery & Approval-Gated Install:** Native `composio_search_free_tools`, `composio_install_tool`, `composio_setup_tool`, and `composio_execute_tool` tools with Slack OAuth setup links and automated post-approval execution.
-- **Track A (Zero-Hallucination Grounding):** Claims Bank figure & `[X]` never-claim verification extended to `kind === 'document'` (`document_render`, `visual_document_render`) with `skipNamedEntities: true`, and hard figure grounding in Slack replies (`groundReply`, P8) checking percentages, currencies, and non-time unit figures against run evidence.
+- **Track A (Claims Grounding):** Claims Bank figure and `[X]` never-claim verification extended to owner-authored document paths, with named-entity checks skipped for document layouts, plus numeric grounding in Slack replies (`groundReply`, P8) for percentages, currencies, and selected non-time units against run evidence.
 - **Track D (RRSI-Regularized Self-Improvement, arXiv:2609.24972v3):** Migration 11 `rrsi_edit_ledger` table and `MemoryRepository` ledger methods (`recordRrsiProposal`, `recordRrsiTrial`, `listRrsiLedger`, `memory_manage` `target: 'ledger'`); diff-level deterministic leakage critic (`screenCandidateLeakage`) blocking payload-specific emails, URLs, dates, currency figures, percentages, IDs/paths, proper nouns, and $>35$-word prose dumps; candidate promotion after corroboration ($N \ge 3$) routing single edits away from global prefix cache invalidation; credit assignment on Slack card approve/drop and web queue edits/drops; Lasso ($L_1$) structural pruning (`pruneStaleCandidates`) demoting unproductive learned facts (`trials >= 3 && delta_score < 0`) to `confidence = 0.5` while preserving owner facts; and Ridge ($L_2$) complexity cap on `getExecutiveFacts` ($\le 1,000$ tokens / 4,000 chars).
 - **Track B (Closed-Loop Proactive Follow-Through):** Inbound mail auto-resolution of active `waiting_items` in `GmailSentinel` and `ProtonSentinel` with Slack card confirmation; auto-staged follow-up email proposals for overdue items in `wake.ts` (`processOverdueWaitingItems`, verified via `reviewOwnerText`) with Slack approval quote cards; outbound email send auto-tracking in `executeApprovedAction` (`executor.ts`, wired in runtime and queue routes) tracking open loops with 3-day deadlines; and pre-meeting Chief-of-Staff open loop and recent attendee email thread context (`searchEmails`) attached to `<20 min` alerts in `CalendarSentinel`.
 - **Track C (Universal Drive Reader & Evaluator Pass):** `drive_read_file` tool extracting content from Google Docs, PDFs, DOCX, and text up to `max_chars`; and routine evaluator pass in `RoutineWorker` verifying `hard_constraints` with `evaluator_model` and appending evaluation notes on failure.
@@ -630,7 +635,7 @@ Started 2026-10-14 [code]. v4 was reported as a full replacement of v2, but its 
 | `src/governance/claims-bank.ts`, `src/agent/claim-checker.ts` | Truth checks |
 | `src/config/owner.ts`, `.env.example`, `deploy/README.md` | Config and ops |
 | `src/runtime/build-runtime.ts` | Everything wired |
-| `docs/plans/token-reduction.md` | The cost plan and its production evidence |
+| Historical token-reduction plan | Not included in the public showcase |
 
 ### B. Environment surface (from `.env.example`)
 

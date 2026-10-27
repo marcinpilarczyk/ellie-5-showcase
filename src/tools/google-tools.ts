@@ -110,7 +110,7 @@ export function createGoogleTools(googleClient: GoogleWorkspaceClient): ToolDefi
     schema: z.object({
       spreadsheetId: z.string().describe('Google Spreadsheet ID or alias'),
       range: z.string().describe('Target tab name or range (e.g. Pipeline)'),
-      row: z.record(z.any()).describe('Key-value pairs corresponding to column headers in the sheet'),
+      row: z.record(z.string(), z.any()).describe('Key-value pairs corresponding to column headers in the sheet'),
       headerRow: z.number().int().optional().describe('1-based header row number')
     }),
     execute: async (params) => {

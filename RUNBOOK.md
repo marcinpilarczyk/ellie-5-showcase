@@ -1,5 +1,9 @@
 # Ellie v5 runbook
 
+> **Showcase note:** These operations document the reference architecture and are not a supported
+> deployment service. Treat hostnames, credentials, systemd units, and public endpoints below as
+> examples, and perform an independent security and data-processing review before using real data.
+
 Everything runs as the `ellie` user on your host (e.g. `ellie.example.com`; SSH as `ubuntu`, which has sudo).
 
 | What | Where |
@@ -55,7 +59,7 @@ cd ~/ellie && node --env-file=.env dist/scripts/doctor.js
 bash deploy/push.sh
 ```
 
-It uploads the committed `HEAD` into a fresh `~/ellie.new`, copies `.env`, runs `npm ci`, the build and `doctor`, and only then swaps it in and restarts. If anything fails, the running install is untouched. The previous install stays in `~/ellie.prev`; roll back with `mv ~/ellie ~/ellie.bad && mv ~/ellie.prev ~/ellie` and a restart. Migrations run on start and are additive.
+It uploads the committed `HEAD` into a fresh `~/ellie.new`, installs dependencies, builds, copies `.env`, runs `doctor`, and then swaps it in and restarts. Build or doctor failures leave the running install untouched. A failed restart or health check automatically restores `~/ellie.prev` when one exists. Migrations run on start and are additive.
 
 ### Turn things off (trigger inventory)
 
@@ -71,6 +75,10 @@ It uploads the committed `HEAD` into a fresh `~/ellie.new`, copies `.env`, runs 
 ### Secrets
 
 All live secrets are in `~/ellie/.env`. After rotating one, edit `.env`, run doctor, then `systemctl --user restart ellie.service`. The Google OAuth refresh token is in `app.sqlite` (`integrations` table); if it is revoked, open `<ELLIE_CONTROL_URL>/api/integrations/google/connect`. The Google Cloud OAuth client must list `https://ellie-funnel.example.ts.net:8443/api/auth/google/callback` as a redirect URI.
+
+The SQLite database contains OAuth tokens and task history. Restrict the data directory to the
+service account, keep it out of backups or sync tools you do not control, and protect backups as
+credentials.
 
 ### Backup and restore
 

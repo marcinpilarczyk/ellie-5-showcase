@@ -221,11 +221,11 @@ describe('Phase 4: Self-Improvement Loop & Owner Config Wiring', () => {
 
       const event: SlackEventPayload = {
         type: 'message',
-        user: 'U04203APE',
+        user: 'U0OWNERTEST',
         text: 'Too bubbly. Cut pleasantries and follow up directly.',
         ts: '1791933382.2222',
         thread_ts: staged.slack_thread_ts || '1791933382.1111',
-        channel: 'C0B1HV10G9H'
+        channel: 'C0TESTCHANNEL'
       };
 
       await coworkerService.handleUserMessage(event);

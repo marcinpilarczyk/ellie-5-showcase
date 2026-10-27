@@ -12,6 +12,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -46,7 +47,11 @@ class EllieApiClient(private val prefs: ServerPreferences) {
     ): Request {
         val base = getBaseUrl()
         val token = getToken()
-        val url = "$base$path"
+        val url = "$base$path".toHttpUrlOrNull()
+            ?: throw IOException("Invalid Ellie server URL")
+        if (url.scheme != "https") {
+            throw IOException("Ellie requires HTTPS; refusing to send credentials over ${url.scheme}.")
+        }
 
         val requestBuilder = Request.Builder().url(url)
         if (token.isNotEmpty()) {

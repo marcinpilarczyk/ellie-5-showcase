@@ -285,7 +285,7 @@ export function createComposioTools(deps: ComposioToolsDeps): ToolDefinition[] {
       authMode: z.enum(['NONE', 'OAUTH2', 'API_KEY', 'BEARER_TOKEN', 'BASIC']).optional().describe('Authentication mode required by the tool'),
       reason: z.string().min(1).describe('Concise explanation of why this tool is needed'),
       pendingTask: z.string().min(1).describe('The exact user task/question Ellie should complete immediately after this tool is approved and installed'),
-      authConfig: z.record(z.any()).optional().describe('Optional auth configuration parameters if provided by the owner')
+      authConfig: z.record(z.string(), z.any()).optional().describe('Optional auth configuration parameters if provided by the owner')
     }),
     execute: async (params) => {
       const slug = params.toolSlug.trim().toUpperCase();
@@ -384,7 +384,7 @@ export function createComposioTools(deps: ComposioToolsDeps): ToolDefinition[] {
     isAvailable: () => client.isConfigured(),
     schema: z.object({
       toolSlug: z.string().min(1).describe('Installed Composio tool slug (e.g. "GITHUB_GET_REPO")'),
-      authConfig: z.record(z.any()).optional().describe('Optional authentication credentials or parameters to complete setup')
+      authConfig: z.record(z.string(), z.any()).optional().describe('Optional authentication credentials or parameters to complete setup')
     }),
     execute: async ({ toolSlug, authConfig }) => {
       const slug = toolSlug.trim().toUpperCase();
@@ -431,7 +431,7 @@ export function createComposioTools(deps: ComposioToolsDeps): ToolDefinition[] {
     isAvailable: () => client.isConfigured(),
     schema: z.object({
       toolSlug: z.string().min(1).describe('Installed Composio tool slug (e.g. "HACKERNEWS_GET_TOP_STORIES")'),
-      arguments: z.record(z.any()).optional().default({}).describe('Input parameters for the Composio tool')
+      arguments: z.record(z.string(), z.any()).optional().default({}).describe('Input parameters for the Composio tool')
     }),
     execute: async ({ toolSlug, arguments: args }, context) => {
       const slug = toolSlug.trim().toUpperCase();
