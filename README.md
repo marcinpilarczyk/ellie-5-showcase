@@ -194,11 +194,11 @@ ellie-v5/
 │   └── vps.sh                  # Host bootstrap and cutover script for systemd units
 ├── docs/
 │   ├── INVENTORY_PUBLIC.md     # Comprehensive public architecture & governance specification
-│   ├── ELLIE_DESIGN.md         # Foundational architectural doctrine and hard-won lessons
-│   ├── PLAN.md                 # Roadmap, completed milestones, and engineering notes
-│   ├── HANDOFF-*.md            # Module handoff specifications
+│   ├── ELLIE_DESIGN.md         # Current design principles, tradeoffs, and source map
+│   ├── HOW_ELLIE_WORKS.md      # Plain-English product walkthrough
+│   ├── PLAN.md                 # Curated roadmap, milestones, and known limitations
 │   └── Ellie_v5_Architecture_Specification.docx
-├── android/                    # Native Android companion app (Jetpack Compose, in development)
+├── android/                    # Experimental native Android companion (Jetpack Compose)
 │   └── app/src/main/java/com/ellie/app/
 ├── skills/                     # Domain-specific executive skills & Polish language humanizers
 │   ├── humanization/           # AI tell-stripping scanner and prose naturalizer
@@ -212,7 +212,6 @@ ellie-v5/
 │   ├── storage/                # SQLite repositories, including learning and memory ledgers
 │   ├── runtime/                # UnifiedAgentRunner, prompt builder, model router, cache manager
 │   ├── scheduler/              # Sentinels (Gmail, Proton, Cal), cron routines, nudge gate
-│   ├── storage/                # SQLite repositories (app.sqlite, ledger.sqlite, migrations)
 │   ├── tools/                  # Statically typed native tool definitions
 │   ├── web/                    # Express control plane, REST endpoints, spaces hosting
 │   ├── index.ts                # Application entry point
@@ -220,7 +219,7 @@ ellie-v5/
 │   └── test/                   # Offline unit and integration tests
 ├── package.json                # Modern ESM Node.js >=22.13.0 dependencies
 ├── tsconfig.json               # TypeScript 5.8+ ES2022 configuration
-└── RUNBOOK.md                  # Complete operational manual, network routing, and health checks
+└── RUNBOOK.md                  # Optional deployment, security, and diagnostic examples
 ```
 
 ---
@@ -298,9 +297,9 @@ For complete operational procedures, backup restoration, and service monitoring,
 
 * **[How Ellie Works: A Plain-English Guide](docs/HOW_ELLIE_WORKS.md)**: A comprehensive non-technical walkthrough of Ellie's role, daily workflows, safety mechanisms, and capabilities.
 * **[Public Architecture & Governance Specification](docs/INVENTORY_PUBLIC.md)**: Exhaustive breakdown of system topology, model routing parameters, and tool catalogs.
-* **[Ellie Design Doctrine](docs/ELLIE_DESIGN.md)**: Engineering manifesto, failure mode analysis from earlier generations, and the philosophical principles behind host governance.
-* **[Operational Runbook](RUNBOOK.md)**: Day-to-day administration, network architecture, and diagnostic troubleshooting.
-* **[Product Roadmap & Engineering Plan](docs/PLAN.md)**: Live tracking of milestones, live test traces, and performance telemetry.
+* **[Ellie Design Notes](docs/ELLIE_DESIGN.md)**: Current architecture principles, evidence boundaries, document generation, and key tradeoffs.
+* **[Example Runbook](RUNBOOK.md)**: Local setup, optional systemd deployment, security boundaries, and diagnostics.
+* **[Showcase Roadmap](docs/PLAN.md)**: Curated milestones, improvement areas, and known limitations.
 
 ---
 

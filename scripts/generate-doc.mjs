@@ -248,7 +248,7 @@ const docChildren = [
 
   h1('0. Executive Preface: Context Note for AI Employee Platforms'),
   h2('Background and Motivation'),
-  p('This architecture specification documents Ellie v5, a private, single-tenant, Slack-first AI Chief of Staff. The system was designed and built following production experience with commercial AI coworker platforms (specifically Viktor.com).'),
+  p('This architecture specification documents Ellie v5, a single-tenant, Slack-first AI Chief of Staff reference implementation.'),
   p('Commercial AI coworker platforms excel for mid-size and enterprise companies, where pooled team budgets absorb usage-based consumption naturally. Such platforms pioneered several interaction patterns that heavily inspired Ellie:'),
   bullet('Interacting inside Slack channels and threads with a natural conversational voice, responsiveness, and solid context retention instead of acting like a temporary chatbot.', '1. The coworker experience:'),
   bullet('Recognizing that in scheduled monitoring, saying nothing when nothing changed is the hallmark of an executive assistant.', '2. Silence as a valid output:'),
@@ -257,7 +257,7 @@ const docChildren = [
   h2('The Solo Operator Dilemma & Real-World Friction'),
   p('For a freelancer or solo operator, usage-based credit tiers become an obstacle to running an always-on, 24/7 personal chief of staff:'),
   bullet('Running continuous background watchers (inbox monitoring, calendar overlap checks, folder sweeps, open loop tracking) constantly drains monthly credit allotments. Having to throttle or pause 10 out of 11 routines just to save credits defeats the core value of an autonomous coworker.', 'Background vigilance anxiety:'),
-  bullet('In multi-tenant managed setups, over 90% of credits end up consumed by idle polling loops and conversational ping-pongs, not deep reasoning.', 'Polling versus thinking:'),
+  bullet('Multi-tenant managed agents often spend substantial capacity on idle checks and conversational turns instead of bounded reasoning.', 'Polling versus thinking:'),
   p('While the coworker workflow is compelling, running it continuously as an independent operator required a setup anchored in direct-API pricing and deterministic host-code execution:'),
   bullet('Trigger detection runs in lightweight host code (inspecting IMAP UID sequences, Gmail historyId checkpoints, Google Drive modification timestamps, or receiving webhooks) at zero marginal cost. Gemini models run only when an actual state change needs intelligence, reducing background costs to near zero while keeping sub-minute responsiveness.', '1. Cheap triggers, expensive thinking:'),
   bullet('System prompts like "do not send emails without permission" fail under prompt injection, context truncation, or subtle conversational pressure. Host code keeps the authority boundary. Native tools belong to effect classes (READ, LOCAL_WRITE, INTERNAL_REVERSIBLE_WRITE, CONSEQUENTIAL). Consequential tools cannot execute directly. The dispatcher records a proposal in SQLite and appends its state transitions to an event history before rendering the full serialized payload in a Slack approval card. Only an explicit owner interaction with a valid Slack signature triggers execution.', '2. Deterministic governance vs prompt pleading:'),
@@ -383,13 +383,13 @@ const docChildren = [
 
   h1('4. Proactive Sentinels & Autonomous Operations'),
   h2('4.1 Sentinels and Nudge Gate'),
-  p('Gmail and Proton sentinels watch incoming correspondence around the clock. When a counterparty replies to an outstanding thread, open waiting loops resolve automatically. Inbound triage runs on the fast sentinel tier and posts Slack cards with one-click reply drafts.'),
-  p('A calendar sentinel checks upcoming schedules within a rolling 45-minute window, raising alerts only for imminent commitments or double bookings.'),
+  p('Gmail and Proton sentinels periodically check incoming correspondence. When a counterparty replies to an outstanding thread, matching waiting loops can resolve automatically. Inbound triage runs on the fast sentinel tier and can stage reply drafts for owner review.'),
+  p('A calendar sentinel checks events starting within approximately 20 minutes, raising deduplicated alerts for imminent commitments.'),
   p('A configurable nudge gate enforces quiet hours, daily notification limits, snooze durations, and 24-hour deduplication so background alertness never degrades into notification noise.'),
 
   h2('4.2 Cron Routines and Dual-Pass Evaluator'),
   p('Background routines that monitor external folders or trackers check resource modification timestamps before doing any work. When nothing changed, the run finishes silently without spending model tokens.'),
-  p('When a routine has hard factual constraints, an optional evaluator pass checks the draft against tool evidence using the reasoning model and appends a note when a violation is detected.'),
+  p('When a routine has hard factual constraints and an evaluator model, an optional evaluator pass checks the draft against tool evidence and appends a note when a violation is detected. Evaluator failures do not block delivery.'),
 
   h1('5. Web Control Plane & Interface'),
   p('A single-page control plane runs alongside the agent runtime under token authentication or a configured trusted tailnet listener.'),
@@ -399,8 +399,8 @@ const docChildren = [
   h2('Showcase Implementation (v5.0.0)'),
   p('The showcase includes the core agent, governance pipeline, dual-engine document rendering, native integrations, dynamically registered integrations, and an automated offline test suite.'),
 
-  h2('Roadmap and Active Development (TBD)'),
-  p('Mobile operations and real-time voice are currently in development. This track includes a native Android companion app (Jetpack Compose) for on-the-go approvals and space viewing, alongside bidirectional Gemini Live voice streaming over WebSockets and ambient meeting note synthesis.')
+  h2('Experimental Interfaces'),
+  p('The repository includes an experimental native Android companion (Jetpack Compose) for approvals, runs, routines, Spaces, voice notes, and meeting recording, along with server endpoints for audio transcription, speech synthesis, and meeting-note ingestion. These paths are showcase quality, not distributed production clients.')
 ];
 
 const doc = new Document({
