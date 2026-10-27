@@ -89,7 +89,7 @@ Here is what an ordinary workday looks like with Ellie managing the background:
 Before you start work, Ellie's morning routine wakes up. She scans your Google Calendar, checks your unread Gmail and Proton Mail, and inspects your project trackers.
 * If nothing urgent happened and your day is clear, she can stay completely silent (no spam).
 * If you have an upcoming meeting or pending action items, a clean, formatted briefing appears in your Slack:
-  > *"Good morning. You have 2 meetings today: an intro sync at 11:30 AM and a team review at 3:00 PM. Mariana replied to your partnership inquiry (draft ready for review). No overdue items."*
+  > *"Good morning. You have 2 meetings today: an intro sync at 11:30 AM and a team review at 3:00 PM. A partner replied to your inquiry (draft ready for review). No overdue items."*
 
 ### 11:15 AM — Job & Opportunity Evaluation
 You come across an interesting job posting or consulting request on LinkedIn. You paste the link into Slack:

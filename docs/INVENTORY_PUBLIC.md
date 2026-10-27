@@ -11,9 +11,9 @@
 ## 0. Executive preface: context note for AI employee platforms
 
 ### Background and motivation
-This architecture specification documents Ellie v5, a private, single-tenant, Slack-first AI Chief of Staff. The system was designed and built following production experience with commercial AI coworker platforms (specifically Viktor.com).
+This architecture specification documents Ellie v5, a single-tenant, Slack-first AI Chief of Staff reference implementation.
 
-Commercial AI coworker platforms excel for mid-size and enterprise companies, where pooled team budgets absorb usage-based consumption naturally. Such platforms pioneered several interaction patterns that heavily inspired Ellie:
+General-purpose AI coworker platforms popularized several interaction patterns that informed this implementation:
 1. The coworker experience: interacting inside Slack channels and threads with a natural conversational voice, responsiveness, and solid context retention instead of acting like a temporary chatbot.
 2. Silence as a valid output: recognizing that in scheduled monitoring, saying nothing when nothing changed is the hallmark of an executive assistant.
 3. Interactive spaces: publishing persistent, visual HTML micro-applications and dashboards instead of dumping walls of formatted text into chat.
@@ -21,7 +21,7 @@ Commercial AI coworker platforms excel for mid-size and enterprise companies, wh
 ### The solo operator dilemma and real-world friction
 For a freelancer or solo operator, usage-based credit tiers become an obstacle to running an always-on, 24/7 personal chief of staff:
 * Background vigilance anxiety: running continuous background watchers (inbox monitoring, calendar overlap checks, folder sweeps, open loop tracking) constantly drains monthly credit allotments. Having to throttle or pause 10 out of 11 routines just to save credits defeats the core value of an autonomous coworker.
-* Polling versus thinking: in multi-tenant managed setups, over 90% of credits end up consumed by idle polling loops and conversational ping-pongs, not deep reasoning.
+* Polling versus thinking: multi-tenant managed agents often spend substantial capacity on idle checks and conversational turns instead of bounded reasoning.
 
 While the coworker workflow is compelling, running it continuously as an independent operator required a setup anchored in direct-API pricing and deterministic host-code execution:
 
@@ -160,7 +160,7 @@ Native and dynamically registered tools are typed, assigned an effect class, and
 * gmail_draft: non-consequential draft creation with read-back verification.
 * gmail_send: consequential outbound email staging requiring human Slack approval.
 * sheets_read, sheets_append, sheets_update: header-mapped reading, row appending, and cell-by-cell verified updates.
-* docs_read, docs_create, docs_append: full document reading and verified authoring logged in authored resources.
+* docs_read, docs_create, docs_append: document reading and authoring, with supported creations tracked as authored resources.
 * drive_search, drive_read_file: drive search and universal reading (extracts text from Docs, PDFs, Word docx, CSV, JSON).
 * calendar_list, calendar_create: calendar inspection and staged consequential event creation.
 
@@ -222,9 +222,9 @@ These tools are restricted to interactive Slack sessions and blocked in backgrou
 
 ### 4.1 Sentinels and nudge gate
 
-Gmail and Proton sentinels watch incoming correspondence around the clock. When a counterparty replies to an outstanding thread, open waiting loops resolve automatically. Inbound triage runs on the fast sentinel tier and posts Slack cards with one-click reply drafts.
+Gmail and Proton sentinels periodically check incoming correspondence. When a counterparty replies to an outstanding thread, matching waiting loops can resolve automatically. Inbound triage runs on the fast sentinel tier and can stage reply drafts for owner review.
 
-A calendar sentinel checks upcoming schedules within a rolling 45-minute window, raising alerts only for imminent commitments or double bookings.
+A calendar sentinel checks events starting within approximately 20 minutes, raising deduplicated alerts for imminent commitments.
 
 A configurable nudge gate enforces quiet hours, daily notification limits, snooze durations, and 24-hour deduplication so background alertness never degrades into notification noise.
 
@@ -232,15 +232,15 @@ A configurable nudge gate enforces quiet hours, daily notification limits, snooz
 
 Background routines that monitor external folders or trackers check resource modification timestamps before doing any work. When nothing changed, the run finishes silently without spending model tokens.
 
-When a routine has hard factual constraints, a second evaluator pass checks the draft against tool evidence using the reasoning model before anything posts to Slack.
+When a routine has hard factual constraints and an evaluator model, a second pass checks the draft against tool evidence and appends a note when it detects a constraint violation. Evaluator failures do not block routine delivery.
 
 ---
 
 ## 5. Web control plane and interface
 
-A single-page control plane runs alongside the agent runtime under token authentication.
+A single-page control plane runs alongside the agent runtime under token authentication or a deliberately trusted private listener.
 
-The approvals screen (at `/`) lists staged consequential actions with diff previews, approval buttons, and drop controls. A spaces gallery (at `/spaces`) lets users browse and search agent-published dashboards and micro-apps. The routines screen manages schedules and manual run triggers, while the runs tab provides glass-box telemetry for prompt timing, token counts, cache hit rates, and delivered text. Additional views report token costs, project documentation, and integration health checks.
+The approvals screen (at `/`) lists staged consequential actions with payload previews, approval buttons, and drop controls. A spaces gallery (at `/spaces`) lets users browse and search agent-published dashboards and micro-apps. The routines screen manages schedules and manual run triggers, while the runs tab provides glass-box telemetry for prompt timing, token counts, cache hit rates, and delivered text. Additional views report token costs, project documentation, and integration health checks.
 
 ---
 
@@ -250,6 +250,9 @@ The approvals screen (at `/`) lists staged consequential actions with diff previ
 
 The showcase includes the core agent, governance pipeline, dual-engine document rendering, native integrations, dynamically registered integrations, and an automated offline test suite.
 
-### Roadmap and active development (TBD)
+### Experimental interfaces
 
-Mobile operations and real-time voice are currently in development. This track includes a native Android companion app (Jetpack Compose) for on-the-go approvals and space viewing, alongside bidirectional Gemini Live voice streaming over WebSockets and ambient meeting note synthesis.
+The repository includes an experimental native Android companion (Jetpack Compose) for approvals,
+runs, routines, Spaces, voice notes, and meeting recording, along with server endpoints for audio
+transcription, speech synthesis, and meeting-note ingestion. These paths are showcase quality, not
+distributed production clients.

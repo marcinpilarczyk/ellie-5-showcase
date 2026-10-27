@@ -1,112 +1,171 @@
-# Ellie v5 runbook
+# Ellie v5 example runbook
 
-> **Showcase note:** These operations document the reference architecture and are not a supported
-> deployment service. Treat hostnames, credentials, systemd units, and public endpoints below as
-> examples, and perform an independent security and data-processing review before using real data.
+> **Showcase note:** This runbook contains optional operational examples for running the reference
+> implementation. It is not a supported hosting service or production deployment contract. Use
+> synthetic accounts and data unless you have completed an independent security, privacy, and
+> provider-access review.
 
-Everything runs as the `ellie` user on your host (e.g. `ellie.example.com`; SSH as `ubuntu`, which has sudo).
+## Components
 
-| What | Where |
-| --- | --- |
-| Code | `~/ellie` (deployed from this repo with `deploy/push.sh`; commit in `~/ellie/DEPLOYED_COMMIT`) |
-| Config and secrets | `~/ellie/.env` (mode 600) |
-| State | `~/.local/share/ellie/` (`app.sqlite`, `ledger.sqlite`) |
-| Units | `~/.config/systemd/user/ellie.service`, `ellie-wake.service`, `ellie-wake.timer` |
-| Kept original secrets | `~/backups/v2-preservation/.env` (untouched; its `SLACK_BOT_TOKEN` is an old, revoked one) |
-| Archive of everything before v5 | `/var/backups/ellie-archive/ellie-home-pre-v5-20261014.tar.zst` (root only) |
-| Other services on the box | Proton Bridge (`proton-bridge.service`, user unit), Tailscale |
+| Component | Example location |
+| :--- | :--- |
+| Application checkout | `~/ellie` |
+| Environment configuration | `~/ellie/.env` |
+| Runtime data | `~/.local/share/ellie/` |
+| App database | `~/.local/share/ellie/app.sqlite` |
+| Approval database | `~/.local/share/ellie/ledger.sqlite` |
+| Published Spaces | `~/.local/share/ellie/spaces/` |
+| systemd user units | `~/.config/systemd/user/` |
 
-## Network
+The data directory and its backups may contain OAuth tokens, task history, documents, and personal
+information. Restrict access to the service account.
 
-There is no nginx/Caddy. Tailscale provides both entry points:
+## Prerequisites
 
-| Address | Reaches | Who |
-| --- | --- | --- |
-| `https://ellie-funnel.example.ts.net:8443` (Funnel, public) | `/api/health`, `/api/slack/events`, `/api/slack/interactions`, `/api/auth/google/callback` on port 3001 | Slack, Google OAuth |
-| `https://ellie-vps.example.ts.net:10000` (tailnet only) | everything on port 3002, no token | you, on the tailnet |
-| `127.0.0.1:3001` | everything, control-page token required | local |
+- Node.js 22.13 or newer
+- npm
+- Optional: LibreOffice, Poppler, and a headless Chromium-compatible browser for document rendering
+- Optional: Android Studio/JDK 17 for the Android client
+- Provider credentials for whichever integrations you explicitly enable
 
-`ELLIE_PUBLIC_URL` is the Funnel address, `ELLIE_CONTROL_URL` the tailnet one (used in Slack links). Check with `sudo tailscale serve status`.
-
-## Acceptance checks (Ellie is "working" only when you have seen these in Slack)
-
-| # | Do | You should see |
-| --- | --- | --- |
-| 1 | DM: "what's on my calendar tomorrow?" | An answer in the thread; a ⏳ status first if it takes >4 s |
-| 2 | Paste a job link: "should I apply?" | A reasoned answer in the thread |
-| 3 | In that thread: "make a tailored resume" | DOCX and PDF links in the thread; the PDF is 2 pages and every contact detail is in your sources (or BLOCKED with the reason + "reply continue") |
-| 4 | "send an email to <allowlisted address> saying …" ("draft an email" makes a Gmail draft, no card) | A quote card; Approve → card shows "Done (provider confirmed, not read back)"; the mail is in Gmail Sent |
-| 5 | "create a routine every weekday at 8:00 called Morning brief: …", then control page → Routines → Run now | A Slack post with the result; status DELIVERED |
-| 6 | Wait for a scheduled routine | The same, at the scheduled time |
-| 7 | "what did you spend this week?" | Flash vs reasoning-model cost answer |
-
-## Everyday operations
+## Local setup
 
 ```bash
-ssh ubuntu@ellie.example.com
-sudo -iu ellie
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
-systemctl --user status ellie.service              # server
-systemctl --user list-timers ellie-wake.timer      # next wake cycle
-journalctl --user -u ellie.service -f              # live logs
-journalctl --user -u ellie-wake.service -n 200     # last wake cycles
-cd ~/ellie && node --env-file=.env dist/scripts/doctor.js
+git clone https://github.com/marcinpilarczyk/ellie-5-showcase.git
+cd ellie-5-showcase
+npm ci
+cp .env.example .env
 ```
 
-### Deploy a new version (from the laptop, in this repo)
+Edit `.env` and set synthetic or dedicated test credentials. At minimum, production startup checks
+for:
+
+- `ELLIE_CONTROL_PLANE_TOKEN`
+- `GEMINI_API_KEY`
+- `SLACK_SIGNING_SECRET`
+- `SLACK_OWNER_USER_ID`
+
+Most integrations remain disabled or unavailable until their own configuration is present.
+
+Build, test, and diagnose:
 
 ```bash
-bash deploy/push.sh
+npm run build
+npm test
+npm run doctor
 ```
 
-It uploads the committed `HEAD` into a fresh `~/ellie.new`, installs dependencies, builds, copies `.env`, runs `doctor`, and then swaps it in and restarts. Build or doctor failures leave the running install untouched. A failed restart or health check automatically restores `~/ellie.prev` when one exists. Migrations run on start and are additive.
-
-### Turn things off (trigger inventory)
-
-| Trigger | Off |
-| --- | --- |
-| Slack conversations, approvals, control page | `systemctl --user stop ellie.service` |
-| All background work (sentinels, reminders, routines) | `systemctl --user disable --now ellie-wake.timer` |
-| One routine | Slack: "disable routine X", or control page → Routines → Disable |
-| One sentinel | Slack: "turn off the Gmail sentinel" |
-| Proactive messages for a while | Slack: "snooze nudges until 16:00" |
-| Public webhooks | `sudo tailscale funnel --https=8443 off` |
-
-### Secrets
-
-All live secrets are in `~/ellie/.env`. After rotating one, edit `.env`, run doctor, then `systemctl --user restart ellie.service`. The Google OAuth refresh token is in `app.sqlite` (`integrations` table); if it is revoked, open `<ELLIE_CONTROL_URL>/api/integrations/google/connect`. The Google Cloud OAuth client must list `https://ellie-funnel.example.ts.net:8443/api/auth/google/callback` as a redirect URI.
-
-The SQLite database contains OAuth tokens and task history. Restrict the data directory to the
-service account, keep it out of backups or sync tools you do not control, and protect backups as
-credentials.
-
-### Backup and restore
+Run the server:
 
 ```bash
-mkdir -p ~/backups/ellie && for db in app ledger; do
-  sqlite3 ~/.local/share/ellie/$db.sqlite ".backup $HOME/backups/ellie/$db-$(date +%F).sqlite"; done
-# restore
-systemctl --user stop ellie.service ellie-wake.timer
-cp ~/backups/ellie/app-<date>.sqlite ~/.local/share/ellie/app.sqlite
-cp ~/backups/ellie/ledger-<date>.sqlite ~/.local/share/ellie/ledger.sqlite
-systemctl --user start ellie.service ellie-wake.timer
+npm start
 ```
 
-### Getting something back from the pre-v5 archive
+The default application listener binds to `127.0.0.1:3001`.
+
+## Configuration boundaries
+
+- `ELLIE_DATA_DIR` controls SQLite and Spaces storage.
+- `ELLIE_CONTROL_PLANE_TOKEN` protects the normal web listener.
+- `ELLIE_PRIVATE_PORT` optionally exposes a second loopback listener intended for a private
+  network such as Tailscale. Do not publish that listener through Funnel or a public proxy.
+- `ELLIE_SEND_ALLOWLIST` optionally restricts outbound recipients.
+- `ELLIE_ENABLE_JINA_FALLBACK=false` prevents page URLs from being sent to an external reader.
+- Google OAuth tokens are stored in the configured SQLite database.
+
+Treat `.env`, SQLite files, backups, and exported OAuth tokens as sensitive credentials.
+
+## Optional systemd example
+
+The repository includes unit templates under `deploy/systemd/`. They assume:
+
+- the checkout is `~/ellie`;
+- the environment file is `~/ellie/.env`;
+- Node is available at a fixed executable path substituted by `deploy/vps.sh`;
+- user lingering is enabled if services must survive logout.
+
+Do not install or start these units on a shared host without reviewing paths, permissions,
+resource limits, and provider access.
+
+## Optional staged deployment example
+
+`deploy/push.sh` demonstrates a staged deployment workflow:
+
+1. require a clean Git tree;
+2. upload committed `HEAD`;
+3. install dependencies and build in a staging directory;
+4. copy the environment file and run diagnostics;
+5. swap the staged directory into place;
+6. restart and health-check the service;
+7. restore the previous checkout if restart or health checks fail.
+
+Review and adapt the script before use. Database migrations are additive, but a files-only rollback
+does not undo database changes.
+
+## Health and diagnostics
+
+Local health endpoint:
 
 ```bash
-sudo tar -I zstd -tf /var/backups/ellie-archive/ellie-home-pre-v5-20261014.tar.zst | less      # list
-sudo tar -I zstd -xf /var/backups/ellie-archive/ellie-home-pre-v5-20261014.tar.zst -C /tmp/restore ellie-v4/.env   # extract one path
+curl http://127.0.0.1:3001/api/health
 ```
 
-It holds the old home folder: `backups/` (old SQLite snapshots, `v2-preservation/` incl. v2's `routines.json` and `never-claims.json`), `ellie-v4/` (with its `.env`), `.local/share/ellie-v4/`, `work/`, `dev/`, `acceptance/`, `state/`, logs, old unit files. `node_modules` and caches were not archived.
+Common checks:
 
-### Where does a problem belong?
+```bash
+node --env-file=.env dist/scripts/doctor.js
+systemctl --user status ellie.service
+systemctl --user list-timers ellie-wake.timer
+journalctl --user -u ellie.service -n 200 --no-pager
+journalctl --user -u ellie-wake.service -n 200 --no-pager
+```
 
-- **Ellie fix**: wrong tone, wrong routine wording, a missing fact. Tell Ellie in Slack (memory, routine edit).
-- **Config fix**: anything doctor reports, a revoked token, a wrong channel. Edit `.env` or reconnect.
-- **Code fix**: a run trace (control page → Runs) that shows the wrong tool, a crash, or a reply that does not match what the tools returned.
+## Data protection
 
-## Fresh server
+Use restrictive permissions:
 
-`deploy/vps.sh` (phases `inventory`, `fetch`, `preserve`, `wipe`, `configure`, `start`) sets up a new box. The 2026-10-14 cutover on this server was done step by step instead, archiving rather than deleting (see the table above).
+```bash
+chmod 700 "$HOME/.local/share/ellie"
+chmod 600 "$HOME/ellie/.env"
+```
+
+The provided user units set `UMask=0077` so newly created runtime files are private to the service
+account.
+
+## Backup example
+
+Stop background work before taking a manual snapshot, or use SQLite's online backup command.
+
+```bash
+backup_dir="$HOME/backups/ellie"
+mkdir -p "$backup_dir"
+chmod 700 "$backup_dir"
+
+sqlite3 "$HOME/.local/share/ellie/app.sqlite" \
+  ".backup '$backup_dir/app.sqlite'"
+sqlite3 "$HOME/.local/share/ellie/ledger.sqlite" \
+  ".backup '$backup_dir/ledger.sqlite'"
+```
+
+Encrypt or otherwise protect backups containing OAuth tokens and task history.
+
+## Shutdown
+
+| Scope | Example command |
+| :--- | :--- |
+| Web server and Slack responses | `systemctl --user stop ellie.service` |
+| Background wake cycle | `systemctl --user disable --now ellie-wake.timer` |
+| Public webhook exposure | Disable the relevant private-network or proxy route |
+| One routine | Disable it from the control plane or Slack |
+| One sentinel | Disable it from the control plane or Slack |
+
+## Troubleshooting
+
+1. Run `npm run doctor` and fix reported configuration failures.
+2. Check `/api/health` from the same host.
+3. Inspect the most recent run trace in the control plane.
+4. Review service logs for provider errors or invalid configuration.
+5. Reconnect an integration if its credentials were revoked or its scopes changed.
+
+For architecture questions, start with [docs/INVENTORY_PUBLIC.md](docs/INVENTORY_PUBLIC.md) and
+[docs/ELLIE_DESIGN.md](docs/ELLIE_DESIGN.md).
